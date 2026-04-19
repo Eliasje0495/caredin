@@ -8,10 +8,24 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+      colors: {
+        teal:        "#1A7A6A",
+        "teal-light":"#E8F7F4",
+        "teal-mid":  "#5DB8A4",
+        dark:        "#0F1C1A",
+        text:        "#1D2B29",
+        muted:       "#5A7570",
+        bg:          "#FAFAF8",
+        accent:      "#F5A623",
+      },
+      fontFamily: {
+        fraunces: ["Fraunces", "serif"],
+        "dm-sans": ["DM Sans", "sans-serif"],
+        sans:     ["DM Sans", "sans-serif"],
+        serif:    ["Fraunces", "serif"],
+      },
+      borderRadius: {
+        pill: "40px",
       },
     },
   },
