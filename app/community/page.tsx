@@ -12,7 +12,7 @@ const TOPICS = [
   },
   {
     icon: "🏥",
-    title: "BIG & SKJ registratie",
+    title: "Registraties registratie",
     desc: "Vragen over registratie, herregistratie en verificatie",
     posts: 98,
     color: "var(--teal)",
@@ -66,7 +66,7 @@ const DISCUSSIONS = [
   {
     id: "2",
     title: "BIG-herregistratie 2026 — nieuwe eisen voor verpleegkundigen",
-    category: "BIG & SKJ",
+    category: "Registraties",
     author: "Thomas K.",
     time: "5 uur geleden",
     replies: 34,
@@ -116,7 +116,7 @@ const DISCUSSIONS = [
   {
     id: "7",
     title: "SKJ-registratie verlopen — hoe snel herregistreren?",
-    category: "BIG & SKJ",
+    category: "Registraties",
     author: "Ahmed A.",
     time: "4 dagen geleden",
     replies: 8,
@@ -127,7 +127,7 @@ const DISCUSSIONS = [
 
 const CATEGORY_COLOR: Record<string, string> = {
   "ZZP & Financiën":        "#1E40AF",
-  "BIG & SKJ":              "var(--teal)",
+  "Registraties":              "var(--teal)",
   "Wet & Regelgeving":      "#B45309",
   "Sectoren & Specialisaties": "#374151",
   "Ervaringen & Reviews":   "#7C3AED",
@@ -351,7 +351,7 @@ export default function CommunityPage() {
                   📚 Liever eerst lezen?
                 </div>
                 <p className="text-xs mb-3 leading-[1.6]" style={{ color: "var(--muted)" }}>
-                  Bekijk onze kennisbank met praktische artikelen over BIG & SKJ, uurtarieven en meer.
+                  Bekijk onze kennisbank met praktische artikelen over Registraties, uurtarieven en meer.
                 </p>
                 <Link href="/blog"
                   className="text-xs font-semibold no-underline"
@@ -373,7 +373,7 @@ export default function CommunityPage() {
           </div>
         </div>
         {[
-          { heading: "Professionals", links: ["Diensten zoeken", "Je verdiensten", "BIG & SKJ", "Onze belofte"] },
+          { heading: "Professionals", links: ["Diensten zoeken", "Je verdiensten", "Registraties", "Onze belofte"] },
           { heading: "Instellingen",  links: ["Professionals vinden", "Tarieven", "Sectoren", "Integraties"] },
           { heading: "CaredIn",       links: ["Ons verhaal", "Blog", "Community", "Contact"] },
         ].map(col => (

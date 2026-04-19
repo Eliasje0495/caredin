@@ -62,7 +62,7 @@ const HELPDESK_CATEGORIES = [
   {
     icon: "✅",
     title: "Verificaties",
-    desc: "BIG-nummer, KvK, ID-verificatie",
+    desc: "Registraties, KvK, ID-verificatie",
     slug: "verificaties",
   },
 ];

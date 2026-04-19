@@ -37,11 +37,12 @@ export async function PATCH(req: NextRequest) {
 
 function buildWorkerData(step: number, data: any) {
   if (step === 1) return {
-    bio:         data.bio,
-    dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
-    address:     data.address,
-    city:        data.city,
-    postalCode:  data.postalCode,
+    bio:             data.bio,
+    dateOfBirth:     data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
+    address:         data.address,
+    city:            data.city,
+    postalCode:      data.postalCode,
+    primaryFunction: data.primaryFunction || undefined,
   };
   if (step === 2) return {}; // file upload — handled separately
   if (step === 3) return {
@@ -52,8 +53,10 @@ function buildWorkerData(step: number, data: any) {
     kabizNumber:  data.kabizNumber  || undefined,
     kabizStatus:  data.kabizNumber  ? VerifyStatus.PENDING : undefined,
     agbCode:      data.agbCode      || undefined,
-    crkboNumber:  data.crkboNumber  || undefined,
-    nvpaNipNumber: data.nvpaNipNumber || undefined,
+    crkboNumber:   data.crkboNumber   || undefined,
+    nvpaNipNumber: data.nvpaNipNumber  || undefined,
+    diplomaNumber: data.diplomaNumber  || undefined,
+    diplomaStatus: data.diplomaNumber  ? VerifyStatus.PENDING : undefined,
   };
   if (step === 4) return {
     contractType:   data.contractType || "ZZP",

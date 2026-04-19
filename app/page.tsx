@@ -26,7 +26,7 @@ const TESTIMONIALS = [
     initial: "T",
   },
   {
-    quote: "Het BIG-verificatieproces gaf me meteen vertrouwen. Ik weet zeker dat ik aan de juiste mensen word gekoppeld.",
+    quote: "Het verificatieproces gaf me meteen vertrouwen. Ik weet zeker dat ik aan de juiste mensen word gekoppeld.",
     name: "Fatima El Yazidi",
     role: "Thuiszorgmedewerker",
     city: "Rotterdam",
@@ -36,7 +36,7 @@ const TESTIMONIALS = [
 
 const PRO_STEPS = [
   { num: "01", title: "Aanmelden",        desc: "Maak gratis een profiel aan met je basisgegevens." },
-  { num: "02", title: "BIG uploaden",     desc: "Upload je BIG- of SKJ-registratie. Verificatie binnen 24 uur." },
+  { num: "02", title: "Registraties uploaden",     desc: "Upload je registraties. Verificatie binnen 24 uur." },
   { num: "03", title: "Dienst kiezen",    desc: "Blader door honderden beschikbare diensten en meld je aan." },
   { num: "04", title: "Uitbetaling",      desc: "Uren goedgekeurd? Betaling binnen 48 uur op je rekening." },
 ];
@@ -119,7 +119,7 @@ export default function HomePage() {
             className="text-[17px] leading-[1.75] max-w-xl"
             style={{ color: "rgba(255,255,255,0.5)" }}
           >
-            CaredIn verbindt BIG-geverifieerde zorgprofessionals met instellingen door heel Nederland. Zonder bureau, zonder gedoe.
+            CaredIn verbindt geverifieerde zorgprofessionals met instellingen door heel Nederland. Zonder bureau, zonder gedoe.
           </p>
 
           {/* CTA buttons */}
@@ -232,7 +232,7 @@ export default function HomePage() {
           <ul className="space-y-3 mb-7">
             {[
               "Gratis aanmelden — geen verborgen kosten",
-              "BIG-geverifieerd profiel voor meer vertrouwen",
+              "Realtime geverifieerd profiel voor meer vertrouwen",
               "Uitbetaling binnen 48 uur na goedkeuring",
             ].map((item) => (
               <li
@@ -283,7 +283,7 @@ export default function HomePage() {
             {[
               "Geen bureau — direct contact met de professional",
               "Slechts €3/uur platformbijdrage, geen verborgen fees",
-              "Alleen geverifieerde BIG-geregistreerde professionals",
+              "Alleen realtime geverifieerde professionals met biometrische scan",
             ].map((item) => (
               <li
                 key={item}
@@ -704,7 +704,7 @@ export default function HomePage() {
               links: [
                 { label: "Diensten zoeken",  href: "/vacatures" },
                 { label: "Je verdiensten",   href: "/voor-professionals" },
-                { label: "BIG & SKJ",        href: "/big-verificatie" },
+                { label: "Registraties",        href: "/big-verificatie" },
                 { label: "Onze belofte",     href: "/onze-belofte" },
               ],
             },

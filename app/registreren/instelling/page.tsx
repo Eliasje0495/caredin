@@ -539,7 +539,7 @@ export default function InstellingRegistrerenPage() {
             {/* Trust points */}
             <div className="space-y-4 mb-10">
               {[
-                { icon: "🏥", text: "Geverifieerde ZZP'ers — BIG & SKJ gecheckt" },
+                { icon: "🏥", text: "Geverifieerde ZZP'ers — Registraties gecheckt" },
                 { icon: "⚡", text: "Binnen 24u geplaatst — gemiddeld 3 aanmeldingen per dienst" },
                 { icon: "💰", text: "Geen bemiddelingskosten — slechts €3,– per gewerkt uur" },
               ].map((item) => (

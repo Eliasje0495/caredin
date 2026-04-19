@@ -123,7 +123,7 @@ export default async function ProfessionalsPage({
             className="text-[15px] leading-[1.7] mb-8"
             style={{ color: "rgba(255,255,255,0.45)", maxWidth: "480px" }}
           >
-            Alle professionals zijn BIG- of SKJ-geverifieerd via het officiële register.
+            Alle professionals zijn geverifieerd via het officiële register.
           </p>
 
           {/* Inline search */}
@@ -547,7 +547,7 @@ export default async function ProfessionalsPage({
               links: [
                 { label: "Diensten zoeken", href: "/vacatures" },
                 { label: "Je verdiensten", href: "/dashboard" },
-                { label: "BIG & SKJ", href: "/onze-belofte" },
+                { label: "Registraties", href: "/onze-belofte" },
                 { label: "Onze belofte", href: "/onze-belofte" },
               ],
             },

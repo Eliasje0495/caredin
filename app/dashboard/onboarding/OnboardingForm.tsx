@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 
-const WORKER_STEPS = ["Profiel & foto", "Upload ID", "Registraties", "Financieel"];
+const WORKER_STEPS = ["Profiel & foto", "ID & VOG", "Registraties", "Financieel"];
 const EMPLOYER_STEPS = ["Organisatiegegevens", "Logo uploaden", "KvK-gegevens", "Factuurgegevens"];
 
 function Stepper({ steps, active }: { steps: string[]; active: number }) {
@@ -73,9 +73,9 @@ function TermsScreen({ name, onAccept }: { name: string; onAccept: () => void })
           {/* Key points */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             {[
-              { icon: "🔒", title: "Privacy first", desc: "Je gegevens worden nooit verkocht aan derden. Je BIG-nummer is alleen zichtbaar voor geverifieerde zorginstellingen." },
+              { icon: "🔒", title: "Privacy first", desc: "Je gegevens worden nooit verkocht aan derden. Je registratienummers zijn alleen zichtbaar voor geverifieerde zorginstellingen." },
               { icon: "💶", title: "Eerlijke uitbetaling", desc: "Je ontvangt 100% van het afgesproken tarief. CaredIn rekent een platformbijdrage van €3,– per gewerkt uur aan de instelling." },
-              { icon: "✅", title: "Kwaliteitsstandaard", desc: "Je stemt in met verificatie van je BIG- of SKJ-registratie. Onjuiste gegevens leiden tot verwijdering van het platform." },
+              { icon: "✅", title: "Kwaliteitsstandaard", desc: "Je stemt in met verificatie van je registraties. Onjuiste gegevens leiden tot verwijdering van het platform." },
               { icon: "📋", title: "ZZP & contract", desc: "Je werkt als zelfstandige of via loondienst. CaredIn is geen werkgever — wij faciliteren de match tussen jou en de instelling." },
             ].map(p => (
               <div key={p.title} className="flex gap-3 p-4 rounded-xl bg-white"
@@ -115,7 +115,7 @@ function TermsScreen({ name, onAccept }: { name: string; onAccept: () => void })
               <strong>Instelling:</strong> De zorgorganisatie die via het platform zorgprofessionals zoekt.<br/>
               <strong>Dienst:</strong> Een tijdelijk werk- of zorgassignement aangeboden door een instelling.</p>
               <p className="font-bold mb-1" style={{ color: "var(--dark)" }}>Artikel 2 — Registratie en verificatie</p>
-              <p className="mb-3">De professional is verplicht correcte gegevens te verstrekken, inclusief een geldig BIG- of SKJ-nummer waar van toepassing. CaredIn behoudt het recht om profielen te verwijderen bij onjuiste of misleidende informatie.</p>
+              <p className="mb-3">De professional is verplicht correcte gegevens te verstrekken, inclusief een geldig registratienummers waar van toepassing. CaredIn behoudt het recht om profielen te verwijderen bij onjuiste of misleidende informatie.</p>
               <p className="font-bold mb-1" style={{ color: "var(--dark)" }}>Artikel 3 — Betaling en uitbetaling</p>
               <p className="mb-3">Uitbetaling vindt plaats binnen 48 uur na goedkeuring van de gewerkte uren door de instelling. CaredIn rekent een platformbijdrage van €3,– per gewerkt uur, uitsluitend in rekening gebracht bij de instelling.</p>
               <p className="font-bold mb-1" style={{ color: "var(--dark)" }}>Artikel 4 — Aansprakelijkheid</p>
@@ -176,13 +176,22 @@ export default function OnboardingForm({ role, name }: Props) {
   const [postalCode, setPostalCode] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
+  // Worker step 1 — functie
+  const [primaryFunction, setPrimaryFunction] = useState("");
+
+  // Worker step 2 — VOG
+  const [vogFile, setVogFile] = useState<File | null>(null);
+
   // Worker step 3 — Registraties
   const [registrationType, setRegistrationType] = useState<"BIG" | "SKJ" | "KABIZ" | "CRKBO" | "NVPA_NIP" | "MEERDERE" | "NONE" | "">("");
   const [bigNumber, setBigNumber] = useState("");
   const [bigLookup, setBigLookup] = useState<{ loading: boolean; name?: string; profession?: string; error?: string }>({ loading: false });
   const [skjNumber, setSkjNumber] = useState("");
   const [kabizNumber, setKabizNumber] = useState("");
+  const [diplomaNumber, setDiplomaNumber] = useState("");
+  const [diplomaLookup, setDiplomaLookup] = useState<{ loading: boolean; opleiding?: string; instelling?: string; error?: string }>({ loading: false });
   const [agbCode, setAgbCode] = useState("");
+  const [agbLookup, setAgbLookup] = useState<{ loading: boolean; naam?: string; specialisme?: string; error?: string }>({ loading: false });
   const [crkboNumber, setCrkboNumber] = useState("");
   const [nvpaNipNumber, setNvpaNipNumber] = useState("");
 
@@ -218,6 +227,26 @@ export default function OnboardingForm({ role, name }: Props) {
     setBigLookup({ loading: false, name: d.name, profession: d.profession, error: d.error });
   }
 
+  async function lookupDiploma(value: string) {
+    const cleaned = value.replace(/\s/g, "");
+    if (cleaned.length < 6) { setDiplomaLookup({ loading: false }); return; }
+    setDiplomaLookup({ loading: true });
+    const res = await fetch(`/api/duo?number=${cleaned}`).catch(() => null);
+    if (!res) { setDiplomaLookup({ loading: false, error: "Verbinding mislukt" }); return; }
+    const d = await res.json();
+    setDiplomaLookup({ loading: false, opleiding: d.opleiding, instelling: d.instelling, error: d.error });
+  }
+
+  async function lookupAgb(value: string) {
+    const cleaned = value.replace(/[-\s]/g, "");
+    if (cleaned.length < 8) { setAgbLookup({ loading: false }); return; }
+    setAgbLookup({ loading: true });
+    const res = await fetch(`/api/agb?code=${cleaned}`).catch(() => null);
+    if (!res) { setAgbLookup({ loading: false, error: "Verbinding mislukt" }); return; }
+    const d = await res.json();
+    setAgbLookup({ loading: false, naam: d.naam, specialisme: d.specialisme, error: d.error });
+  }
+
   async function lookupKvk(value: string) {
     const cleaned = value.replace(/\s/g, "");
     if (cleaned.length !== 8) { setKvkLookup({ loading: false }); return; }
@@ -251,9 +280,9 @@ export default function OnboardingForm({ role, name }: Props) {
     let data: any = {};
 
     if (role === "WORKER") {
-      if (step === 1) data = { phone, bio, dateOfBirth, address, city, postalCode };
+      if (step === 1) data = { phone, bio, dateOfBirth, address, city, postalCode, primaryFunction };
       if (step === 2) data = {};
-      if (step === 3) data = { registrationType, bigNumber, skjNumber, kabizNumber, agbCode, crkboNumber, nvpaNipNumber };
+      if (step === 3) data = { registrationType, bigNumber, skjNumber, kabizNumber, agbCode, crkboNumber, nvpaNipNumber, diplomaNumber };
       if (step === 4) data = { kvkNumber, kvkCompanyName, contractType, hourlyRate };
     } else {
       if (step === 1) data = { description, address, city, postalCode, website };
@@ -412,6 +441,43 @@ export default function OnboardingForm({ role, name }: Props) {
                     style={{ border: "1.5px solid var(--border)", fontFamily: "inherit", color: "var(--text)" }} />
                 </div>
 
+                {/* Functie */}
+                <div>
+                  <label className="block text-[12px] font-semibold mb-2 uppercase tracking-[0.5px]"
+                    style={{ color: "var(--muted)" }}>Primaire functie</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { value: "VERPLEEGKUNDIGE",           label: "Verpleegkundige" },
+                      { value: "VERZORGENDE_IG",            label: "Verzorgende IG" },
+                      { value: "HELPENDE_PLUS",             label: "Helpende Plus" },
+                      { value: "HELPENDE",                  label: "Helpende" },
+                      { value: "ZORGASSISTENT",             label: "Zorgassistent" },
+                      { value: "GGZ_AGOOG",                 label: "GGZ Agoog" },
+                      { value: "PERSOONLIJK_BEGELEIDER",    label: "Persoonlijk Begeleider" },
+                      { value: "GEDRAGSDESKUNDIGE",         label: "Gedragsdeskundige" },
+                      { value: "FYSIOTHERAPEUT",            label: "Fysiotherapeut" },
+                      { value: "ERGOTHERAPEUT",             label: "Ergotherapeut" },
+                      { value: "LOGOPEDIST",                label: "Logopedist" },
+                      { value: "KRAAMVERZORGENDE",          label: "Kraamverzorgende" },
+                      { value: "ARTS",                      label: "Arts" },
+                      { value: "SPECIALIST_OUDERENGENEESKUNDE", label: "Specialist Ouderengeneeskunde" },
+                      { value: "OVERIG",                    label: "Overig" },
+                    ] as const).map(opt => (
+                      <button key={opt.value} type="button"
+                        onClick={() => setPrimaryFunction(opt.value)}
+                        className="px-3 py-2.5 rounded-xl text-sm text-left font-medium cursor-pointer"
+                        style={{
+                          background: primaryFunction === opt.value ? "var(--teal)" : "#fff",
+                          color: primaryFunction === opt.value ? "#fff" : "var(--dark)",
+                          border: primaryFunction === opt.value ? "2px solid var(--teal)" : "1.5px solid var(--border)",
+                          fontFamily: "inherit",
+                        }}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Address */}
                 <AddressAutocomplete
                   address={address}
@@ -424,13 +490,60 @@ export default function OnboardingForm({ role, name }: Props) {
               </div>
             )}
 
-            {/* ──── WORKER STEP 2: Stripe Identity ──── */}
+            {/* ──── WORKER STEP 2: Stripe Identity + VOG ──── */}
             {role === "WORKER" && step === 2 && (
-              <StripeIdentityStep />
+              <div className="space-y-6">
+                <StripeIdentityStep />
+
+                {/* VOG upload */}
+                <div className="rounded-2xl p-5 bg-white" style={{ border: "0.5px solid var(--border)" }}>
+                  <div className="flex items-start gap-3 mb-4">
+                    <span className="text-2xl">📄</span>
+                    <div>
+                      <div className="text-[14px] font-bold mb-1" style={{ color: "var(--dark)" }}>
+                        Verklaring Omtrent Gedrag (VOG)
+                      </div>
+                      <p className="text-[12px] leading-[1.65]" style={{ color: "var(--muted)" }}>
+                        Veel zorginstellingen vereisen een geldige VOG. Upload hem nu of later vanuit je profiel. Een VOG is geldig voor 1 jaar en is aan te vragen via <a href="https://www.justis.nl/producten/vog" target="_blank" rel="noopener noreferrer" style={{ color: "var(--teal)" }}>justis.nl</a>.
+                      </p>
+                    </div>
+                  </div>
+
+                  {vogFile ? (
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: "rgba(22,101,52,0.07)", border: "1px solid rgba(22,101,52,0.25)" }}>
+                      <span>✅</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-semibold truncate" style={{ color: "#166534" }}>{vogFile.name}</div>
+                        <div className="text-[11px]" style={{ color: "#166534" }}>{(vogFile.size / 1024).toFixed(0)} KB</div>
+                      </div>
+                      <button type="button" onClick={() => setVogFile(null)}
+                        className="text-xs font-semibold cursor-pointer"
+                        style={{ color: "#991B1B", background: "none", border: "none" }}>
+                        Verwijderen
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl cursor-pointer text-[13px] font-semibold"
+                      style={{ background: "var(--teal-light)", color: "var(--teal)", border: "1.5px dashed var(--teal)" }}>
+                      📎 VOG uploaden (PDF of foto)
+                      <input type="file" accept=".pdf,image/*" className="hidden"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) setVogFile(f); }} />
+                    </label>
+                  )}
+
+                  <div className="flex items-center gap-2 mt-3 text-[11px]" style={{ color: "var(--muted)" }}>
+                    <span>ℹ️</span>
+                    <span>Je VOG is alleen zichtbaar voor geverifieerde zorginstellingen</span>
+                  </div>
+                </div>
+              </div>
             )}
 
-            {/* ──── WORKER STEP 3: BIG & SKJ ──── */}
-            {role === "WORKER" && step === 3 && (
+            {/* ──── WORKER STEP 3: Registraties ──── */}
+            {role === "WORKER" && step === 3 && (() => {
+              const NO_REG_NEEDED = ["ZORGASSISTENT", "HELPENDE", "HELPENDE_PLUS", "PERSOONLIJK_BEGELEIDER", "OVERIG"];
+              const registratieOptioneel = primaryFunction && NO_REG_NEEDED.includes(primaryFunction);
+              return (
               <div className="space-y-6">
                 <div>
                   <h2 className="text-xl font-bold mb-1" style={{ fontFamily: "var(--font-fraunces)", color: "var(--dark)" }}>
@@ -440,6 +553,27 @@ export default function OnboardingForm({ role, name }: Props) {
                     Voeg je registraties toe zodat zorginstellingen jouw kwalificaties kunnen verifiëren.
                   </p>
                 </div>
+
+                {registratieOptioneel && (
+                  <div className="rounded-2xl p-5" style={{ background: "rgba(22,101,52,0.06)", border: "1.5px solid rgba(22,101,52,0.25)" }}>
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl flex-shrink-0">✅</span>
+                      <div className="flex-1">
+                        <div className="text-[14px] font-bold mb-1" style={{ color: "#166534" }}>
+                          Geen verplichte registratie voor jouw functie
+                        </div>
+                        <p className="text-[13px] leading-[1.65]" style={{ color: "#166534" }}>
+                          Als {primaryFunction === "ZORGASSISTENT" ? "Zorgassistent" : primaryFunction === "HELPENDE_PLUS" ? "Helpende Plus" : primaryFunction === "HELPENDE" ? "Helpende" : primaryFunction === "PERSOONLIJK_BEGELEIDER" ? "Persoonlijk Begeleider" : "zorgprofessional"} is een BIG-, SKJ- of andere registratie niet vereist. Je kunt deze stap overslaan — of optioneel toch een registratie toevoegen.
+                        </p>
+                        <button type="button" onClick={skip}
+                          className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-[40px] text-sm font-bold cursor-pointer"
+                          style={{ background: "#166534", color: "#fff", border: "none", fontFamily: "inherit" }}>
+                          Doorgaan zonder registratie →
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-3 gap-3">
                   {[
@@ -538,13 +672,43 @@ export default function OnboardingForm({ role, name }: Props) {
                 )}
 
                 <div>
+                  <Field label="DUO Diplomanummer (optioneel)">
+                    <input type="text" value={diplomaNumber}
+                      onChange={e => { setDiplomaNumber(e.target.value); lookupDiploma(e.target.value); }}
+                      placeholder="Bijv. 1234567890" />
+                  </Field>
+                  <p className="text-xs mt-1.5" style={{ color: "var(--muted)" }}>
+                    Verifieer je zorgopleiding via het <a href="https://mijn.diploma-register.nl" target="_blank" rel="noopener noreferrer" style={{ color: "var(--teal)" }}>DUO Diplomaregister</a>
+                  </p>
+                  {diplomaLookup.loading && <p className="text-xs mt-1.5" style={{ color: "var(--teal)" }}>Zoeken in DUO register…</p>}
+                  {!diplomaLookup.loading && diplomaLookup.opleiding && (
+                    <div className="flex items-center gap-2 mt-1.5 text-xs font-semibold" style={{ color: "#166534" }}>
+                      ✓ {diplomaLookup.opleiding}{diplomaLookup.instelling ? ` — ${diplomaLookup.instelling}` : ""}
+                    </div>
+                  )}
+                  {!diplomaLookup.loading && diplomaLookup.error && (
+                    <p className="text-xs mt-1.5" style={{ color: "#991B1B" }}>{diplomaLookup.error}</p>
+                  )}
+                </div>
+
+                <div>
                   <Field label="AGB-code (optioneel)">
-                    <input type="text" value={agbCode} onChange={e => setAgbCode(e.target.value)}
+                    <input type="text" value={agbCode}
+                      onChange={e => { setAgbCode(e.target.value); lookupAgb(e.target.value); }}
                       placeholder="bijv. 03-123456" />
                   </Field>
                   <p className="text-xs mt-1.5" style={{ color: "var(--muted)" }}>
                     Vereist voor ZZP-ers die declareren bij zorginstellingen of verzekeraars.
                   </p>
+                  {agbLookup.loading && <p className="text-xs mt-1.5" style={{ color: "var(--teal)" }}>Zoeken in AGB-register…</p>}
+                  {!agbLookup.loading && agbLookup.naam && (
+                    <div className="flex items-center gap-2 mt-1.5 text-xs font-semibold" style={{ color: "#166534" }}>
+                      ✓ {agbLookup.naam}{agbLookup.specialisme ? ` — ${agbLookup.specialisme}` : ""}
+                    </div>
+                  )}
+                  {!agbLookup.loading && agbLookup.error && (
+                    <p className="text-xs mt-1.5" style={{ color: "#991B1B" }}>{agbLookup.error}</p>
+                  )}
                 </div>
 
                 {registrationType && registrationType !== "NONE" && (
@@ -566,7 +730,8 @@ export default function OnboardingForm({ role, name }: Props) {
                   </div>
                 )}
               </div>
-            )}
+              );
+            })()}
 
             {/* ──── WORKER STEP 4: Financieel ──── */}
             {role === "WORKER" && step === 4 && (

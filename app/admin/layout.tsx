@@ -6,7 +6,7 @@ import Link from "next/link";
 const navItems = [
   { href: "/admin",              label: "Dashboard",        icon: "⬜" },
   { href: "/admin/gebruikers",   label: "Gebruikers",       icon: "⬜" },
-  { href: "/admin/big",          label: "BIG Verificaties", icon: "⬜" },
+  { href: "/admin/big",          label: "Registratieverificaties", icon: "⬜" },
   { href: "/admin/diensten",     label: "Diensten",         icon: "⬜" },
   { href: "/admin/aanmeldingen", label: "Aanmeldingen",     icon: "⬜" },
   { href: "/admin/chat",         label: "Live chat",        icon: "⬜" },

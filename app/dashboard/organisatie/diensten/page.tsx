@@ -103,7 +103,7 @@ export default async function DienstenPage() {
                           <div className="text-right">
                             <div className="text-sm font-bold" style={{ color: "var(--teal)" }}>€{Number(shift.hourlyRate).toFixed(2)}/u</div>
                             <div className="text-xs" style={{ color: "var(--muted)" }}>
-                              {shift._count.applications} sollicitatie{shift._count.applications !== 1 ? "s" : ""}
+                              {shift._count.applications} aanmelding{shift._count.applications !== 1 ? "en" : ""}
                             </div>
                           </div>
                           <span style={{ color: "var(--muted)" }}>→</span>

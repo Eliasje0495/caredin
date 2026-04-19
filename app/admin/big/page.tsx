@@ -29,7 +29,7 @@ export default async function BigVerificatiesPage() {
             margin: 0,
           }}
         >
-          BIG Verificaties
+          Registratieverificaties
         </h1>
         <p style={{ color: "#5A7570", fontSize: 14, marginTop: 4 }}>
           {pendingProfiles.length} aanvra{pendingProfiles.length === 1 ? "ag" : "gen"} wacht{pendingProfiles.length === 1 ? "" : "en"} op beoordeling
@@ -48,7 +48,7 @@ export default async function BigVerificatiesPage() {
         >
           <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
           <div style={{ fontSize: 15, fontWeight: 600, color: "#0F1C1A" }}>
-            Geen openstaande BIG verificaties
+            Geen openstaande Registratieverificaties
           </div>
           <div style={{ fontSize: 13, color: "#5A7570", marginTop: 6 }}>
             Alle aanvragen zijn beoordeeld
@@ -66,7 +66,7 @@ export default async function BigVerificatiesPage() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#F9FAFB" }}>
-                {["Professional", "E-mail", "BIG nummer", "Aangevraagd op", "Acties"].map((h) => (
+                {["Professional", "E-mail", "Registratienummer", "Aangevraagd op", "Acties"].map((h) => (
                   <th
                     key={h}
                     style={{

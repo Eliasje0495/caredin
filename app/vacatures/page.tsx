@@ -570,7 +570,7 @@ export default async function VacaturesPage({
               links: [
                 { label: "Diensten zoeken", href: "/vacatures" },
                 { label: "Je verdiensten", href: "/dashboard" },
-                { label: "BIG & SKJ", href: "/onze-belofte" },
+                { label: "Registraties", href: "/onze-belofte" },
                 { label: "Onze belofte", href: "/onze-belofte" },
               ],
             },

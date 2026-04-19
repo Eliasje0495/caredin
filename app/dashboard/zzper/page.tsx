@@ -60,7 +60,7 @@ export default async function ZzperDashboard() {
             <div>
               <div className="font-semibold text-sm mb-1" style={{ color: "#92400E" }}>Profiel nog niet geverifieerd</div>
               <p className="text-sm leading-[1.6]" style={{ color: "#B45309" }}>
-                Vul je BIG-nummer en KvK-gegevens in om diensten te accepteren.{" "}
+                Vul je registraties en KvK-gegevens in om diensten te accepteren.{" "}
                 <Link href="/dashboard/zzper/profiel" className="font-semibold no-underline underline" style={{ color: "#92400E" }}>Profiel aanvullen →</Link>
               </p>
             </div>
@@ -88,7 +88,7 @@ export default async function ZzperDashboard() {
         <div className="grid grid-cols-3 gap-4 mb-8">
           {[
             { icon: "🔍", label: "Dienst zoeken",     href: "/diensten",                    desc: "Bekijk openstaande shifts" },
-            { icon: "👤", label: "Profiel bewerken",  href: "/dashboard/zzper/profiel",     desc: "BIG, tarief, beschikbaarheid" },
+            { icon: "👤", label: "Profiel bewerken",  href: "/dashboard/zzper/profiel",     desc: "Registraties, tarief, beschikbaarheid" },
             { icon: "📋", label: "Mijn timesheets",   href: "/dashboard/zzper/timesheets",  desc: "Uren bekijken en declareren" },
           ].map((a) => (
             <Link key={a.href} href={a.href}
@@ -107,14 +107,14 @@ export default async function ZzperDashboard() {
         {/* Recent applications */}
         <div className="rounded-2xl bg-white overflow-hidden" style={{ border: "0.5px solid var(--border)" }}>
           <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: "0.5px solid var(--border)" }}>
-            <h2 className="font-semibold text-sm" style={{ color: "var(--dark)" }}>Recente sollicitaties</h2>
+            <h2 className="font-semibold text-sm" style={{ color: "var(--dark)" }}>Recente aanmeldingen</h2>
             <Link href="/dashboard/zzper/diensten" className="text-xs font-semibold no-underline" style={{ color: "var(--teal)" }}>Alle bekijken →</Link>
           </div>
           {applications.length === 0 ? (
             <div className="px-6 py-12 text-center">
               <div className="text-3xl mb-3">📋</div>
-              <p className="text-sm font-semibold mb-1" style={{ color: "var(--dark)" }}>Nog geen sollicitaties</p>
-              <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>Zoek een dienst en solliciteer direct.</p>
+              <p className="text-sm font-semibold mb-1" style={{ color: "var(--dark)" }}>Nog geen aanmeldingen</p>
+              <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>Zoek een dienst en meld je direct aan.</p>
               <Link href="/diensten"
                 className="inline-flex px-5 py-2.5 rounded-full text-sm font-semibold text-white no-underline"
                 style={{ background: "var(--teal)" }}>Dienst zoeken →</Link>

@@ -239,7 +239,7 @@ export default function WeekPlanningClient({ initialShifts, initialWeekStart }: 
                           </div>
                         ) : (
                           <div className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>
-                            {shift._count.applications} sollicitatie{shift._count.applications !== 1 ? "s" : ""}
+                            {shift._count.applications} aanmelding{shift._count.applications !== 1 ? "en" : ""}
                           </div>
                         )}
                       </Link>

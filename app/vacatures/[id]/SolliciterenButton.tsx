@@ -29,7 +29,7 @@ export default function SolliciterenButton({ shiftId, shiftStatus, isLoggedIn, h
       <a href={`/inloggen?redirect=/vacatures/${shiftId}`}
         className="block w-full py-3 rounded-[40px] text-[14px] font-semibold text-white text-center no-underline"
         style={{ background: "var(--teal)" }}>
-        Inloggen om te solliciteren →
+        Inloggen om te aanmelden →
       </a>
     );
   }

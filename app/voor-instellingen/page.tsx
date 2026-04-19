@@ -4,7 +4,7 @@ import { Nav } from "@/components/Nav";
 const STEPS = [
   { num: "01", title: "Registreer gratis", text: "Maak een account aan en voer je KvK-gegevens in. Verificatie duurt gemiddeld 24 uur." },
   { num: "02", title: "Plaats een dienst", text: "Maak een dienst aan met datum, tijdstip, functie en tarief. Direct zichtbaar voor geverifieerde professionals." },
-  { num: "03", title: "Kies je professional", text: "Bekijk aanmeldingen, check BIG/SKJ-verificatie en ratings, en accepteer wie je wil." },
+  { num: "03", title: "Kies je professional", text: "Bekijk aanmeldingen, check verificatie en ratings, en accepteer wie je wil." },
   { num: "04", title: "Keur uren goed", text: "Na de dienst keur je de uren goed. Uitbetaling volgt automatisch — geen papierwerk." },
 ];
 
@@ -18,7 +18,7 @@ const SECTORS = [
 ];
 
 const FEATURES = [
-  { icon: "🔍", title: "BIG-verificatie", text: "Elk profiel wordt gecontroleerd in het BIG- en/of SKJ-register. Jij hoeft niets na te trekken." },
+  { icon: "🔍", title: "Realtime verificatie", text: "Elk profiel wordt realtime geverifieerd inclusief biometrische scan. Jij hoeft niets na te trekken." },
   { icon: "⏱️", title: "Automatische tijdregistratie", text: "Check-in en check-out via de app. Uren worden automatisch berekend en aangeboden ter goedkeuring." },
   { icon: "💳", title: "Directe checkout", text: "Keur uren goed en betaling verloopt automatisch. Geen facturen versturen of opvolgen." },
   { icon: "📄", title: "Factuurexport", text: "Download maandelijkse factuuroverzichten in één klik, klaar voor je boekhouder of ERP." },
@@ -63,7 +63,7 @@ const TESTIMONIALS = [
     avatar: "TK",
   },
   {
-    quote: "De BIG-verificatie is een enorme geruststelling. Ik hoef niet meer zelf in het register te zoeken.",
+    quote: "De realtime verificatie is een enorme geruststelling. Ik hoef niets meer zelf na te trekken.",
     name: "Sandra Meijers",
     role: "Teamleider Zorg, De Hoge Brug",
     avatar: "SM",
@@ -178,7 +178,7 @@ export default function VoorInstellingenPage() {
                   "Geen invloed op welke professional je krijgt",
                   "Handmatig papierwerk & facturatie",
                   "Lange doorlooptijden, soms dagen",
-                  "Geen inzicht in BIG-status",
+                  "Geen realtime identiteitsverificatie",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3">
                     <span className="mt-0.5 text-[15px] flex-shrink-0">❌</span>
@@ -211,7 +211,7 @@ export default function VoorInstellingenPage() {
                   "Jij kiest wie je inplant — volledig transparant",
                   "Volledig automatische tijdregistratie & facturatie",
                   "Professionals online binnen minuten",
-                  "Elk profiel BIG/SKJ-geverifieerd",
+                  "Realtime verificatie + biometrische scan voor elke dienst",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3">
                     <span className="mt-0.5 text-[15px] flex-shrink-0">✅</span>
@@ -424,7 +424,7 @@ export default function VoorInstellingenPage() {
               links: [
                 { label: "Diensten zoeken", href: "/vacatures" },
                 { label: "Je verdiensten", href: "/dashboard" },
-                { label: "BIG & SKJ", href: "/onze-belofte" },
+                { label: "Registraties", href: "/onze-belofte" },
                 { label: "Onze belofte", href: "/onze-belofte" },
               ],
             },

@@ -66,15 +66,15 @@ export default async function AdminDashboardPage() {
     { label: "Zorgprofessionals",        value: totalWorkers,   sub: "worker profielen" },
     { label: "Zorginstellingen",         value: totalEmployers, sub: "werkgevers" },
     { label: "Totaal diensten",          value: totalShifts,    sub: "alle diensten" },
-    { label: "BIG verificaties",         value: pendingBig,     sub: "wacht op beoordeling", alert: pendingBig > 0 },
+    { label: "Registratieverificaties",         value: pendingBig,     sub: "wacht op beoordeling", alert: pendingBig > 0 },
     { label: "Open diensten",            value: openShifts,     sub: "actief beschikbaar" },
   ];
 
   const quickActions = [
     { href: "/admin/gebruikers",   label: "Alle gebruikers bekijken",       desc: "Beheer workers en werkgevers" },
-    { href: "/admin/big",          label: "BIG verificaties beoordelen",    desc: `${pendingBig} wachten op actie` },
+    { href: "/admin/big",          label: "Registratieverificaties beoordelen",    desc: `${pendingBig} wachten op actie` },
     { href: "/admin/diensten",     label: "Diensten overzicht",             desc: "Bekijk alle shifts" },
-    { href: "/admin/aanmeldingen", label: "Aanmeldingen bekijken",          desc: "Status van alle sollicitaties" },
+    { href: "/admin/aanmeldingen", label: "Aanmeldingen bekijken",          desc: "Status van alle aanmeldingen" },
   ];
 
   return (

@@ -21,7 +21,7 @@ export default async function OrgProfielPage() {
           <h1 className="text-[28px] font-bold mb-1" style={{ fontFamily: "var(--font-fraunces)", color: "var(--dark)" }}>
             Organisatieprofiel
           </h1>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>Zichtbaar voor professionals die op jouw diensten solliciteren.</p>
+          <p className="text-sm" style={{ color: "var(--muted)" }}>Zichtbaar voor professionals die op jouw diensten aanmelden.</p>
         </div>
 
         {/* Status */}

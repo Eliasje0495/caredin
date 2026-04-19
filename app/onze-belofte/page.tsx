@@ -14,8 +14,8 @@ const PROFESSIONAL_GUARANTEES = [
   },
   {
     icon: "✅",
-    title: "BIG & SKJ verificatie in 24 uur",
-    text: "Je registratie wordt geverifieerd via het officiële BIG- of SKJ-register. Instellingen zien direct dat jij gekwalificeerd bent.",
+    title: "Registraties verificatie in 24 uur",
+    text: "Je registratie wordt geverifieerd via het officiële register. Instellingen zien direct dat jij gekwalificeerd bent.",
   },
   {
     icon: "🗓",
@@ -38,7 +38,7 @@ const EMPLOYER_GUARANTEES = [
   {
     icon: "🩺",
     title: "Alleen geverifieerde professionals",
-    text: "Elk profiel is gekoppeld aan het BIG- of SKJ-register. Je plaatst nooit een dienst voor iemand zonder geldige registratie.",
+    text: "Elk profiel is geverifieerd. Je plaatst nooit een dienst voor iemand zonder geldige registratie.",
   },
   {
     icon: "⏱",
@@ -71,7 +71,7 @@ const STATS = [
   { num: "4.200+", label: "Geverifieerde professionals" },
   { num: "€3,–",   label: "Platformbijdrage per uur" },
   { num: "48 uur", label: "Uitbetaling na goedkeuring" },
-  { num: "24 uur", label: "BIG/SKJ verificatie" },
+  { num: "24 uur", label: "Verificatie" },
   { num: "< 2 min", label: "Dienst plaatsen" },
   { num: "0%",     label: "Bureaumarge op je tarief" },
 ];
@@ -147,7 +147,7 @@ export default function OnzeBelofte() {
             {[
               ["Bureaumarge op je tarief",         "0%",           "20–35%"],
               ["Uitbetaling na goedkeuring",        "48 uur",       "30–60 dagen"],
-              ["BIG/SKJ verificatie",               "Automatisch",  "Handmatig"],
+              ["Registratieverificatie",               "Automatisch",  "Handmatig"],
               ["Dienst plaatsen",                   "< 2 minuten",  "Telefonisch"],
               ["Kosten voor professional",          "Gratis",       "Inschrijfkosten"],
               ["Transparantie tarieven",            "Volledig",     "Verborgen"],
@@ -284,7 +284,7 @@ export default function OnzeBelofte() {
           </div>
         </div>
         {[
-          { heading: "Professionals", links: ["Diensten zoeken", "Je verdiensten", "BIG & SKJ", "Onze belofte"] },
+          { heading: "Professionals", links: ["Diensten zoeken", "Je verdiensten", "Registraties", "Onze belofte"] },
           { heading: "Instellingen",  links: ["Professionals vinden", "Tarieven", "Sectoren", "Integraties"] },
           { heading: "CaredIn",       links: ["Ons verhaal", "Vacatures", "Nieuwsroom", "Contact"] },
         ].map((col) => (

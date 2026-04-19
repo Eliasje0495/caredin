@@ -25,7 +25,7 @@ export default function GeblokkeerdeProfsPage() {
               Geen geblokkeerde professionals
             </div>
             <p className="text-sm max-w-sm mx-auto" style={{ color: "var(--muted)" }}>
-              Je hebt nog niemand geblokkeerd. Via de sollicitantenpagina kun je een professional blokkeren.
+              Je hebt nog niemand geblokkeerd. Via de aanmeldingenpagina kun je een professional blokkeren.
             </p>
           </div>
         ) : (

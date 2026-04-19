@@ -14,7 +14,7 @@ const HELPDESK_CONTENT: Record<string, string> = {
     <p>Je hebt nodig: je volledige naam, een geldig e-mailadres en een wachtwoord van minimaal 8 tekens. We raden aan een sterk wachtwoord te kiezen dat je nergens anders gebruikt.</p>
     <p>Voor zorgprofessionals vragen we daarna om:</p>
     <ul>
-      <li>Je BIG-registratienummer (als je een BIG-geregistreerd beroep uitoefent)</li>
+      <li>Je BIG-registratienummer (als je een geverifieerd beroep uitoefent)</li>
       <li>Je KvK-nummer als je als ZZP'er werkt</li>
       <li>Je IBAN voor uitbetaling via Stripe Connect</li>
     </ul>
@@ -40,7 +40,7 @@ const HELPDESK_CONTENT: Record<string, string> = {
       <li><strong>Werkervaring:</strong> Voeg minimaal je twee meest recente functies toe met beschrijving.</li>
       <li><strong>Beschikbaarheid:</strong> Geef aan op welke dagen en tijden je beschikbaar bent.</li>
       <li><strong>Regio:</strong> Vul je voorkeurregio's in — dit bepaalt welke diensten je ziet.</li>
-      <li><strong>BIG-verificatie:</strong> Upload je BIG-certificaat voor een geverifieerd profiel-badge.</li>
+      <li><strong>Verificatie:</strong> Upload je registraties voor een geverifieerd profiel-badge.</li>
     </ul>
 
     <h2>Hoe update je je profiel?</h2>
@@ -51,11 +51,11 @@ const HELPDESK_CONTENT: Record<string, string> = {
   `,
 
   "big-verificatie": `
-    <h2>Wat is BIG-verificatie?</h2>
-    <p>BIG-verificatie is het proces waarbij CaredIn controleert of jouw BIG-registratie geldig en actueel is. Dit is een wettelijke verplichting voor zorginstellingen — zij mogen alleen samenwerken met BIG-geregistreerde professionals voor voorbehouden handelingen.</p>
+    <h2>Wat is verificatie op CaredIn?</h2>
+    <p>Verificatie is het proces waarbij CaredIn controleert of jouw registraties geldig en actueel zijn. Afhankelijk van je beroep kan dit gaan om BIG, SKJ, KABIZ of andere registraties. Dit geeft zorginstellingen vertrouwen dat jij gekwalificeerd bent.</p>
 
     <h2>Hoe werkt de verificatie op CaredIn?</h2>
-    <p>Na het aanmaken van je account kun je je BIG-nummer invoeren in je profiel. CaredIn controleert automatisch via de officiële CIBG-database of jouw registratie actief is. Dit gebeurt bij het aanmaken van je profiel én periodiek daarna.</p>
+    <p>Na het aanmaken van je account voer je je registratienummer(s) in via je profiel. CaredIn controleert automatisch of je registratie actief is. Dit gebeurt bij het aanmaken van je profiel én periodiek daarna.</p>
     <p>De verificatie verloopt in drie stappen:</p>
     <ul>
       <li>Je voert je BIG-nummer in tijdens de onboarding</li>

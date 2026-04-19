@@ -431,7 +431,7 @@ function ProfessionalForm() {
 
           {/* Trust line */}
           <div className="flex items-center justify-center gap-5 pt-1">
-            {["🔒 Gratis", "✅ BIG-geverifieerd", "⚡ 48u uitbetaling"].map(t => (
+            {["🔒 Gratis", "✅ geverifieerd", "⚡ 48u uitbetaling"].map(t => (
               <span key={t} className="text-[11px]" style={{ color: "var(--muted)" }}>{t}</span>
             ))}
           </div>
@@ -482,7 +482,7 @@ function ProfessionalForm() {
             <div className="space-y-0 mb-10">
               {[
                 { n: "1", title: "Account aanmaken", desc: "Naam, e-mail, wachtwoord — klaar in 60 seconden.", active: true },
-                { n: "2", title: "BIG / SKJ uploaden", desc: "Verificatie duurt gemiddeld 2 werkuren.", active: false },
+                { n: "2", title: "Registraties uploaden", desc: "Verificatie duurt gemiddeld 2 werkuren.", active: false },
                 { n: "3", title: "Diensten ontdekken", desc: "Filter op locatie, specialisme en tarief.", active: false },
                 { n: "4", title: "Uitbetaling binnen 48u", desc: "Direct op je rekening, geen bureau ertussen.", active: false },
               ].map((step, i, arr) => (

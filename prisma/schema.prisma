@@ -52,11 +52,12 @@ model WorkerProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  bio           String?   @db.Text
-  dateOfBirth   DateTime?
-  address       String?
-  city          String?
-  postalCode    String?
+  bio              String?   @db.Text
+  dateOfBirth      DateTime?
+  address          String?
+  city             String?
+  postalCode       String?
+  primaryFunction  ZorgFunction?
 
   contractType  ContractType @default(ZZP)
 
@@ -74,6 +75,11 @@ model WorkerProfile {
   kabizNumber     String?
   kabizStatus     VerifyStatus @default(UNVERIFIED)
   kabizVerifiedAt DateTime?
+
+  // DUO Diplomaregister
+  diplomaNumber     String?
+  diplomaStatus     VerifyStatus @default(UNVERIFIED)
+  diplomaVerifiedAt DateTime?
 
   // AGB-code
   agbCode       String?
