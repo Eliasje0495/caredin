@@ -312,7 +312,8 @@ model ShiftApplication {
   platformFee  Decimal? @db.Decimal(10,2)
   paidAt       DateTime?
 
-  stripeTransferId String?
+  stripeTransferId  String?
+  overeenkomstUrl   String?
 
   // Stripe Identity — biometrische check 10 min voor shift
   identitySessionId  String?

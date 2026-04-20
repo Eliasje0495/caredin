@@ -52,9 +52,12 @@ export async function POST(
       { status: 409 }
     );
 
+  const origin = req.headers.get("origin") ?? process.env.NEXTAUTH_URL ?? "https://caredin.nl";
+  const overeenkomstUrl = `${origin}/api/shifts/${shiftId}/overeenkomst`;
+
   // Create application
   const application = await prisma.shiftApplication.create({
-    data: { shiftId, userId, status: "PENDING" },
+    data: { shiftId, userId, status: "PENDING", overeenkomstUrl },
   });
 
   // Notify employer
@@ -70,7 +73,17 @@ export async function POST(
     ).catch(() => {});
   }
 
-  return NextResponse.json({ id: application.id });
+  // Send overeenkomst to worker
+  if (session.user?.email) {
+    emails.overeenkomstWorker(
+      session.user.email,
+      session.user.name ?? "Zorgprofessional",
+      shift.title,
+      overeenkomstUrl,
+    ).catch(() => {});
+  }
+
+  return NextResponse.json({ id: application.id, overeenkomstUrl });
 }
 
 export async function DELETE(

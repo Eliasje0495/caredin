@@ -139,6 +139,30 @@ export const emails = {
       `)
     ),
 
+  overeenkomstWorker: (to: string, name: string, shiftTitle: string, pdfUrl: string) =>
+    sendEmail(
+      to,
+      `Modelovereenkomst voor ${shiftTitle}`,
+      emailTemplate(`
+        <h2 style="margin:0 0 16px;font-size:22px;color:#0F1C1A;">Je aanmelding is ontvangen</h2>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374846;">
+          Hoi ${name.split(" ")[0]}, je aanmelding voor <strong style="color:#0F1C1A;">${shiftTitle}</strong> is ontvangen.
+          Hieronder vind je de modelovereenkomst voor deze opdracht.
+        </p>
+        <div style="background:#F0F7F5;border-radius:12px;padding:20px;margin:0 0 24px;">
+          <div style="font-size:13px;font-weight:700;color:#0F1C1A;margin-bottom:4px;">📄 Modelovereenkomst van Opdracht</div>
+          <div style="font-size:12px;color:#5A7472;">Op basis van Belastingdienst modelovereenkomst nr. 9015550000-09-2</div>
+        </div>
+        <a href="${pdfUrl}"
+           style="display:inline-block;background:#1A7A6A;color:#fff;padding:14px 28px;border-radius:40px;text-decoration:none;font-weight:600;font-size:14px;">
+          Overeenkomst bekijken & downloaden →
+        </a>
+        <p style="margin:20px 0 0;font-size:12px;color:#7A9994;">
+          De overeenkomst is ook te vinden in je dashboard. Vragen? Mail naar <a href="mailto:support@caredin.nl" style="color:#1A7A6A;">support@caredin.nl</a>
+        </p>
+      `)
+    ),
+
   identityCheck: (to: string, name: string, shiftTitle: string, startTime: string, verifyUrl: string) =>
     sendEmail(
       to,
