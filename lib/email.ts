@@ -138,4 +138,43 @@ export const emails = {
         </a>
       `)
     ),
+
+  identityCheck: (to: string, name: string, shiftTitle: string, startTime: string, verifyUrl: string) =>
+    sendEmail(
+      to,
+      `⏱ Actie vereist: identiteitscheck voor ${shiftTitle}`,
+      emailTemplate(`
+        <h2 style="margin:0 0 8px;font-size:22px;color:#0F1C1A;">Je dienst begint over 10 minuten</h2>
+        <p style="margin:0 0 20px;font-size:13px;color:#7A9994;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">
+          ${shiftTitle} · ${startTime}
+        </p>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374846;">
+          Hoi ${name.split(" ")[0]}, voordat je begint moet je een snelle biometrische check doen.
+          Dit duurt minder dan <strong style="color:#0F1C1A;">60 seconden</strong> en bevestigt je identiteit voor de instelling.
+        </p>
+        <div style="background:#F5F7F6;border-radius:12px;padding:20px;margin:0 0 24px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <span style="font-size:20px;">📷</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#0F1C1A;">Selfie + ID-scan</div>
+              <div style="font-size:12px;color:#7A9994;">Via Stripe Identity — veilig en versleuteld</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:20px;">🔒</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#0F1C1A;">Privacy gegarandeerd</div>
+              <div style="font-size:12px;color:#7A9994;">Gegevens worden niet opgeslagen bij de instelling</div>
+            </div>
+          </div>
+        </div>
+        <a href="${verifyUrl}"
+           style="display:inline-block;background:#1A7A6A;color:#fff;padding:16px 32px;border-radius:40px;text-decoration:none;font-weight:700;font-size:15px;">
+          Identiteit bevestigen →
+        </a>
+        <p style="margin:20px 0 0;font-size:12px;color:#7A9994;">
+          Deze link is eenmalig en verloopt na de dienst. Problemen? Mail naar <a href="mailto:support@caredin.nl" style="color:#1A7A6A;">support@caredin.nl</a>
+        </p>
+      `)
+    ),
 };
