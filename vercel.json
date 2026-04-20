@@ -7,10 +7,6 @@
     {
       "path": "/api/cron/verify-agb",
       "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/identity-check",
-      "schedule": "*/5 * * * *"
     }
   ]
 }
