@@ -81,8 +81,10 @@ model WorkerProfile {
   diplomaStatus     VerifyStatus @default(UNVERIFIED)
   diplomaVerifiedAt DateTime?
 
-  // AGB-code
-  agbCode       String?
+  // AGB-code (Vektis)
+  agbCode         String?
+  agbStatus       VerifyStatus @default(UNVERIFIED)
+  agbVerifiedAt   DateTime?
 
   // CRKBO
   crkboNumber   String?
