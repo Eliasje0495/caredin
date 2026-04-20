@@ -2,6 +2,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const WEEK_DAYS = [
+  { value: 1, label: "Ma" },
+  { value: 2, label: "Di" },
+  { value: 3, label: "Wo" },
+  { value: 4, label: "Do" },
+  { value: 5, label: "Vr" },
+  { value: 6, label: "Za" },
+  { value: 0, label: "Zo" },
+];
+
 const SECTORS = [
   { value: "VVT",             label: "Ouderenzorg (VVT)" },
   { value: "GGZ",             label: "GGZ" },
@@ -62,10 +72,63 @@ export default function NieuweShiftForm({ defaultCity, defaultAddress, defaultPo
   const [requiresSkj, setRequiresSkj] = useState(false);
   const [minExperience, setMinExperience] = useState("0");
 
+  // Herhaling state
+  const [recurringOpen, setRecurringOpen] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurDays, setRecurDays] = useState<number[]>([]);
+  const [recurUntil, setRecurUntil] = useState("");
+
+  function toggleRecurDay(day: number) {
+    setRecurDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Build ISO datetimes from date + time strings
+    const startTime = startDate && startTimeStr ? `${startDate}T${startTimeStr}:00` : undefined;
+    const endTime = startDate && endTimeStr ? `${startDate}T${endTimeStr}:00` : undefined;
+
+    if (isRecurring) {
+      if (recurDays.length === 0) {
+        setError("Selecteer minimaal één dag voor de herhaling.");
+        setLoading(false);
+        return;
+      }
+      if (!recurUntil) {
+        setError("Selecteer een einddatum voor de herhaling.");
+        setLoading(false);
+        return;
+      }
+      const res = await fetch("/api/shifts/recurring", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          base: {
+            title, description, sector, function: fn,
+            address, city, postalCode,
+            startTime, endTime,
+            breakMinutes: parseInt(breakMinutes || "30"),
+            hourlyRate: parseFloat(hourlyRate),
+            isUrgent, isNightShift,
+            requiresBig, requiresSkj, requiresKvk: false,
+            minExperience: parseInt(minExperience || "0"),
+          },
+          recurrence: { days: recurDays, until: recurUntil },
+        }),
+      });
+      setLoading(false);
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setError(d.error ?? "Er ging iets mis.");
+        return;
+      }
+      const data = await res.json();
+      router.push(`/dashboard/organisatie/diensten/${data.parentId}`);
+      return;
+    }
 
     const res = await fetch("/api/shifts", {
       method: "POST",
@@ -200,6 +263,72 @@ export default function NieuweShiftForm({ defaultCity, defaultAddress, defaultPo
           </select>
         </F>
       </Section>
+
+      {/* Herhalen */}
+      <div className="rounded-2xl bg-white overflow-hidden" style={{ border: "0.5px solid var(--border)" }}>
+        <button
+          type="button"
+          onClick={() => setRecurringOpen(o => !o)}
+          className="w-full flex items-center justify-between px-6 py-4 text-left"
+          style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+        >
+          <span className="text-base font-bold" style={{ fontFamily: "var(--font-fraunces)", color: "var(--dark)" }}>
+            Herhalen
+          </span>
+          <span className="text-sm" style={{ color: "var(--muted)" }}>{recurringOpen ? "▲" : "▼"}</span>
+        </button>
+
+        {recurringOpen && (
+          <div className="px-6 pb-6 space-y-4" style={{ borderTop: "0.5px solid var(--border)" }}>
+            <div className="pt-4">
+              <Toggle label="Herhaalde dienst aanmaken" value={isRecurring} onChange={setIsRecurring} />
+            </div>
+
+            {isRecurring && (
+              <>
+                <div>
+                  <label className="block text-[13px] font-semibold mb-2" style={{ color: "var(--text)" }}>
+                    Dagen
+                  </label>
+                  <div className="flex gap-2 flex-wrap">
+                    {WEEK_DAYS.map(day => (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => toggleRecurDay(day.value)}
+                        className="px-3 py-2 rounded-xl text-sm font-semibold transition-colors"
+                        style={{
+                          border: "1px solid var(--border)",
+                          background: recurDays.includes(day.value) ? "var(--teal)" : "var(--bg)",
+                          color: recurDays.includes(day.value) ? "#fff" : "var(--text)",
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        {day.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text)" }}>
+                    Herhalen tot
+                  </label>
+                  <input
+                    type="date"
+                    value={recurUntil}
+                    onChange={e => setRecurUntil(e.target.value)}
+                    min={startDate || new Date().toISOString().split("T")[0]}
+                    className="w-full px-4 py-3 rounded-xl text-sm outline-none bg-white"
+                    style={{ border: "1px solid var(--border)", fontFamily: "inherit", color: "var(--text)" }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       {error && (
         <div className="px-4 py-3 rounded-xl text-sm" style={{ background: "#FEF2F2", border: "1px solid #FECACA", color: "#991B1B" }}>

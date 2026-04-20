@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { sendPushToMatchingWorkers } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,12 @@ export async function POST(req: NextRequest) {
     where: { id: employer.id },
     data: { totalShiftsPosted: { increment: 1 } },
   });
+
+  sendPushToMatchingWorkers(shift.sector, shift.city, {
+    title: "Nieuwe dienst beschikbaar",
+    body: `${shift.title} in ${shift.city} — €${Number(shift.hourlyRate).toFixed(2)}/uur`,
+    url: `/vacatures/${shift.id}`,
+  }).catch(() => {});
 
   return NextResponse.json({ id: shift.id });
 }

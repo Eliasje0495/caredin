@@ -96,6 +96,7 @@ export default function OrgNav({ companyName, initial, pendingCheckouts }: Props
               {[
                 { href: "/dashboard/organisatie/profiel",       label: "Profiel" },
                 { href: "/dashboard/organisatie/statistieken",  label: "Statistieken" },
+                { href: "/dashboard/organisatie/locaties",      label: "Locaties" },
                 { href: "/dashboard/organisatie/geblokkeerd",   label: "Geblokkeerde professionals" },
                 { href: "/dashboard/organisatie/export",        label: "Shifts exporteren" },
                 { href: "/dashboard/organisatie/notificaties",  label: "Notificaties" },

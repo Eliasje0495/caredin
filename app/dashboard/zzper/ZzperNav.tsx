@@ -8,6 +8,7 @@ const NAV_GROUPS = [
     heading: "Account instellingen",
     items: [
       { icon: "👤", label: "Mijn profiel",                href: "/dashboard/zzper/profiel" },
+      { icon: "📅", label: "Mijn beschikbaarheid",       href: "/dashboard/zzper/beschikbaarheid" },
       { icon: "💼", label: "Flexpools",                   href: "/dashboard/zzper/flexpools" },
       { icon: "💶", label: "Financieel overzicht",        href: "/dashboard/zzper/financieel" },
       { icon: "🛡️", label: "Mijn verzekeringen & pensioen", href: "/dashboard/zzper/verzekeringen" },

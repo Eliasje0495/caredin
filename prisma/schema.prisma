@@ -33,6 +33,7 @@ model User {
   applications  ShiftApplication[]
   reviews       Review[]          @relation("ReviewedUser")
   givenReviews  Review[]          @relation("ReviewerUser")
+  pushSubscriptions PushSubscription[]
 
   @@index([email])
   @@map("users")
@@ -221,6 +222,7 @@ model Employer {
   vacancies     Vacancy[]
   apiKeys       ApiKey[]
   webhooks      WebhookEndpoint[]
+  locations     Location[]
 
   @@map("employers")
 }
@@ -270,6 +272,13 @@ model Shift {
   filledAt    DateTime?
   cancelledAt DateTime?
   cancelReason String?
+
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+
+  isRecurring     Boolean @default(false)
+  recurrenceRule  String?      // JSON: {"freq":"weekly","days":[1,5],"until":"2026-12-31","count":null}
+  parentShiftId   String?      // verwijst naar de originele template-shift
 
   platformFeePerHour Decimal @default(3.00) @db.Decimal(8,2)
 
@@ -539,4 +548,41 @@ model WebhookDelivery {
 
   @@index([endpointId])
   @@map("webhook_deliveries")
+}
+
+// ─────────────────────────────────────────────
+// LOCATIES (multi-locatie voor instellingen)
+// ─────────────────────────────────────────────
+model Location {
+  id         String   @id @default(cuid())
+  employerId String
+  employer   Employer @relation(fields: [employerId], references: [id], onDelete: Cascade)
+
+  name       String
+  address    String
+  city       String
+  postalCode String
+  isActive   Boolean  @default(true)
+
+  createdAt  DateTime @default(now())
+  shifts     Shift[]
+
+  @@map("locations")
+}
+
+// ─────────────────────────────────────────────
+// PUSH SUBSCRIPTIONS (web push notificaties)
+// ─────────────────────────────────────────────
+model PushSubscription {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  endpoint String @unique
+  p256dh   String
+  auth     String
+
+  createdAt DateTime @default(now())
+
+  @@map("push_subscriptions")
 }
