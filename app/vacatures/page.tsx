@@ -522,6 +522,39 @@ export default async function VacaturesPage({
                                     {SECTOR_LABELS[shift.sector] ?? shift.sector}
                                   </span>
                                 )}
+                                {/* Vereiste registraties */}
+                                {shift.requiresBig && (
+                                  <span
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg"
+                                    style={{ background: "#EFF6FF", color: "#1D4ED8", border: "0.5px solid #BFDBFE" }}
+                                  >
+                                    BIG vereist
+                                  </span>
+                                )}
+                                {shift.requiresSkj && (
+                                  <span
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg"
+                                    style={{ background: "#F5F3FF", color: "#6D28D9", border: "0.5px solid #DDD6FE" }}
+                                  >
+                                    SKJ vereist
+                                  </span>
+                                )}
+                                {shift.requiresKvk && (
+                                  <span
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg"
+                                    style={{ background: "#FFF7ED", color: "#C2410C", border: "0.5px solid #FED7AA" }}
+                                  >
+                                    KvK vereist
+                                  </span>
+                                )}
+                                {shift.minExperience > 0 && (
+                                  <span
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg"
+                                    style={{ background: "#F0FDF4", color: "#15803D", border: "0.5px solid #BBF7D0" }}
+                                  >
+                                    {shift.minExperience}+ jaar ervaring
+                                  </span>
+                                )}
                               </div>
                             </div>
 
