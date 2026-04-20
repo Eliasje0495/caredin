@@ -1,0 +1,16 @@
+name: Identity Check (elke 5 min)
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: # handmatig triggeren via GitHub UI
+
+jobs:
+  identity-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger identity check
+        run: |
+          curl -sf -X GET "https://caredin.nl/api/cron/identity-check" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            --max-time 30
