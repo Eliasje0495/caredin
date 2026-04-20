@@ -1,14 +1,14 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 
-webpush.setVapidDetails(
-  "mailto:support@caredin.nl",
-  process.env.VAPID_PUBLIC_KEY ?? "",
-  process.env.VAPID_PRIVATE_KEY ?? ""
-);
+function initVapid() {
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return false;
+  webpush.setVapidDetails("mailto:support@caredin.nl", process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+  return true;
+}
 
 export async function sendPushToUser(userId: string, payload: { title: string; body: string; url?: string }) {
-  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return;
+  if (!initVapid()) return;
   const subs = await prisma.pushSubscription.findMany({ where: { userId } });
   await Promise.allSettled(
     subs.map(async (sub) => {
@@ -30,7 +30,7 @@ export async function sendPushToMatchingWorkers(
   city: string,
   payload: { title: string; body: string; url?: string }
 ) {
-  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return;
+  if (!initVapid()) return;
   // Find workers in same sector/city
   const profiles = await prisma.workerProfile.findMany({
     where: {
