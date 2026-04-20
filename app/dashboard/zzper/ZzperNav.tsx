@@ -26,8 +26,9 @@ const NAV_GROUPS = [
   {
     heading: "Documenten",
     items: [
-      { icon: "🔒", label: "Privacybeleid", href: "/privacy" },
-      { icon: "📄", label: "Voorwaarden",   href: "/voorwaarden" },
+      { icon: "📑", label: "Mijn overeenkomsten", href: "/dashboard/zzper/overeenkomsten" },
+      { icon: "🔒", label: "Privacybeleid",        href: "/privacy" },
+      { icon: "📄", label: "Voorwaarden",          href: "/voorwaarden" },
     ],
   },
 ];
