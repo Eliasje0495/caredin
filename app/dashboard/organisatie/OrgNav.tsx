@@ -99,6 +99,7 @@ export default function OrgNav({ companyName, initial, pendingCheckouts }: Props
                 { href: "/dashboard/organisatie/geblokkeerd",   label: "Geblokkeerde professionals" },
                 { href: "/dashboard/organisatie/export",        label: "Shifts exporteren" },
                 { href: "/dashboard/organisatie/notificaties",  label: "Notificaties" },
+                { href: "/dashboard/organisatie/api",           label: "API Integratie" },
               ].map(item => (
                 <Link key={item.href} href={item.href}
                   onClick={() => setOpen(false)}
