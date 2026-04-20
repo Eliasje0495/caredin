@@ -81,7 +81,6 @@ export async function GET(
     generatedTime: NL_TIME.format(application.appliedAt),
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const buffer = await renderToBuffer(React.createElement(OvereenkomstDocument, { d: data }) as any);
 
   return new NextResponse(new Uint8Array(buffer), {

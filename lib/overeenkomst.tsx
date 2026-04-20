@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 // lib/overeenkomst.tsx — Modelovereenkomst van Opdracht voor CaredIn
 // Gebaseerd op Belastingdienst modelovereenkomst nr. 90615.36558 (30 juni 2016)
 

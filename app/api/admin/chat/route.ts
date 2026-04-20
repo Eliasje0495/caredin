@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY ?? "re_placeholder");
+const getResend = () => new Resend(process.env.RESEND_API_KEY ?? "re_placeholder");
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "").split(",").map(e => e.trim().toLowerCase());
 
 function esc(s: string) {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   if (conversation?.visitorEmail) {
     const visitorName = esc(conversation.visitorName ?? "daar");
     const safeContent = esc(content.trim());
-    resend.emails.send({
+    getResend().emails.send({
       from:    "CaredIn <noreply@caredin.nl>",
       to:      conversation.visitorEmail,
       subject: "Je hebt een reactie ontvangen van CaredIn",

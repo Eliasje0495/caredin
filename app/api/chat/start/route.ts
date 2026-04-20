@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY ?? "re_placeholder");
+const getResend = () => new Resend(process.env.RESEND_API_KEY ?? "re_placeholder");
 
 export async function POST(req: NextRequest) {
   const { visitorName, visitorEmail, message } = await req.json();
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  resend.emails.send({
+  getResend().emails.send({
     from:    "CaredIn <noreply@caredin.nl>",
     to:      process.env.ADMIN_EMAILS?.split(",")[0] ?? "elias@standin.works",
     subject: `💬 Nieuw chatbericht van ${visitorName || visitorEmail || "anoniem"}`,
