@@ -366,6 +366,14 @@ export default async function ProfessionalsPage({
                             ✓ SKJ
                           </span>
                         )}
+                        {w.vogStatus === "VERIFIED" && (
+                          <span
+                            className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full"
+                            style={{ background: "rgba(6,95,70,0.09)", color: "#065F46" }}
+                          >
+                            ✓ VOG
+                          </span>
+                        )}
                         <span
                           className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full"
                           style={{

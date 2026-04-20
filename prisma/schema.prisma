@@ -99,6 +99,14 @@ model WorkerProfile {
   kvkVerifiedAt     DateTime?
   kvkCompanyName    String?
 
+  // VOG (Verklaring Omtrent Gedrag)
+  vogUrl           String?
+  vogStatus        VerifyStatus @default(UNVERIFIED)
+  vogVerifiedAt    DateTime?
+  vogExpiresAt     DateTime?    // VOG verloopt na 3 jaar
+  vogRejectedAt    DateTime?
+  vogRejectedReason String?
+
   sectors       WorkerSector[]
   functions     WorkerFunction[]
 

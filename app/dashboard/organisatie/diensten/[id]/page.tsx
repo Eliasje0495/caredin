@@ -40,7 +40,7 @@ export default async function ShiftDetailPage({ params }: { params: { id: string
               name: true, email: true, image: true,
               workerProfile: {
                 select: {
-                  bigStatus: true, kvkStatus: true, isVerified: true,
+                  bigStatus: true, kvkStatus: true, vogStatus: true, isVerified: true,
                   averageRating: true, totalShifts: true, hourlyRate: true,
                   contractType: true, city: true,
                 },
@@ -213,6 +213,9 @@ function ApplicantCard({ app, shiftId, shiftStatus }: { app: any; shiftId: strin
                 )}
                 {wp.kvkStatus === "VERIFIED" && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#065F4618", color: "#065F46" }}>✓ KvK</span>
+                )}
+                {wp.vogStatus === "VERIFIED" && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#065F4618", color: "#065F46" }}>✓ VOG</span>
                 )}
                 {wp.averageRating && (
                   <span className="text-xs" style={{ color: "var(--muted)" }}>{Number(wp.averageRating).toFixed(1)} ★</span>
