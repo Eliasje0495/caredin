@@ -84,13 +84,16 @@ function removeParam(
 export default async function VacaturesPage({
   searchParams,
 }: {
-  searchParams: { sector?: string; functie?: string; q?: string; stad?: string; sortBy?: string };
+  searchParams: { sector?: string; functie?: string; q?: string; stad?: string; sortBy?: string; registratie?: string };
 }) {
   const where: any = { status: "OPEN" };
   if (searchParams.sector) where.sector = searchParams.sector;
   if (searchParams.functie) where.function = searchParams.functie;
   if (searchParams.stad)
     where.city = { contains: searchParams.stad, mode: "insensitive" as const };
+  if (searchParams.registratie === "big") where.requiresBig = true;
+  if (searchParams.registratie === "skj") where.requiresSkj = true;
+  if (searchParams.registratie === "kvk") where.requiresKvk = true;
 
   const orderBy = buildOrderBy(searchParams.sortBy);
 
@@ -104,6 +107,13 @@ export default async function VacaturesPage({
   const activeSector = searchParams.sector ?? null;
   const activeFunctie = searchParams.functie ?? null;
   const activeStad = searchParams.stad ?? null;
+  const activeRegistratie = searchParams.registratie ?? null;
+
+  const REGISTRATIE_LABELS: Record<string, string> = {
+    big: "BIG vereist",
+    skj: "SKJ vereist",
+    kvk: "KvK vereist",
+  };
 
   // Active filter pills
   type Pill = { label: string; removeHref: string };
@@ -122,6 +132,11 @@ export default async function VacaturesPage({
     activePills.push({
       label: activeStad,
       removeHref: removeParam(searchParams as Record<string, string | undefined>, "stad"),
+    });
+  if (activeRegistratie)
+    activePills.push({
+      label: REGISTRATIE_LABELS[activeRegistratie] ?? activeRegistratie,
+      removeHref: removeParam(searchParams as Record<string, string | undefined>, "registratie"),
     });
 
   return (
@@ -306,6 +321,43 @@ export default async function VacaturesPage({
                   </form>
                 </div>
 
+                {/* Registratie filter */}
+                <div className="px-6 pt-5 pb-4" style={{ borderBottom: "0.5px solid var(--border)" }}>
+                  <div className="text-[11px] font-bold uppercase tracking-[1px] mb-3" style={{ color: "var(--muted)" }}>
+                    Vereiste registratie
+                  </div>
+                  <div className="space-y-1.5">
+                    {[
+                      { key: null,  label: "Alle diensten" },
+                      { key: "big", label: "BIG vereist" },
+                      { key: "skj", label: "SKJ vereist" },
+                      { key: "kvk", label: "KvK vereist" },
+                    ].map(({ key, label }) => {
+                      const params = new URLSearchParams();
+                      if (activeSector) params.set("sector", activeSector);
+                      if (activeFunctie) params.set("functie", activeFunctie);
+                      if (activeStad) params.set("stad", activeStad);
+                      if (searchParams.sortBy) params.set("sortBy", searchParams.sortBy);
+                      if (key) params.set("registratie", key);
+                      const isActive = activeRegistratie === key;
+                      return (
+                        <Link
+                          key={key ?? "alle"}
+                          href={`/vacatures?${params.toString()}`}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs no-underline transition-colors"
+                          style={{
+                            background: isActive ? "rgba(26,122,106,0.08)" : "transparent",
+                            color: isActive ? "var(--teal)" : "var(--muted)",
+                            fontWeight: isActive ? 600 : 400,
+                          }}
+                        >
+                          {label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Sorteren */}
                 <div className="px-6 pt-5 pb-4" style={{ borderBottom: "0.5px solid var(--border)" }}>
                   <div className="text-[11px] font-bold uppercase tracking-[1px] mb-3" style={{ color: "var(--muted)" }}>
@@ -406,7 +458,7 @@ export default async function VacaturesPage({
                       {shifts.length === 0 ? "Geen resultaten" : `${SORT_OPTIONS.find((o) => o.value === (searchParams.sortBy ?? ""))?.label ?? "Nieuwste eerst"}`}
                     </p>
                   </div>
-                  {(activeSector || activeFunctie || activeStad || searchParams.q) && (
+                  {(activeSector || activeFunctie || activeStad || activeRegistratie || searchParams.q) && (
                     <Link
                       href="/vacatures"
                       className="text-xs font-medium no-underline px-4 py-2 rounded-[40px]"
