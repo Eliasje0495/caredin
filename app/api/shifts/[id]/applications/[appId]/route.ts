@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { emails } from "@/lib/email";
+import { dispatchWebhook } from "@/lib/webhook";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,12 @@ export async function PATCH(
     });
     const dateStr = new Date(shift.startTime).toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" });
     emails.applicationAccepted(app.user.email!, shift.title, dateStr).catch(() => {});
+    dispatchWebhook(employer.id, "shift.filled", {
+      shiftId: params.id,
+      applicationId: params.appId,
+      workerName: app.user.name ?? "Onbekend",
+      workerEmail: app.user.email ?? "",
+    }).catch(() => {});
   } else {
     emails.applicationRejected(app.user.email!, shift.title).catch(() => {});
   }

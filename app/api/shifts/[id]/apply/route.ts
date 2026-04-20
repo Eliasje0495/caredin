@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emails } from "@/lib/email";
+import { dispatchWebhook } from "@/lib/webhook";
 
 export async function POST(
   req: NextRequest,
@@ -59,6 +60,14 @@ export async function POST(
   const application = await prisma.shiftApplication.create({
     data: { shiftId, userId, status: "PENDING", overeenkomstUrl },
   });
+
+  // Dispatch webhook
+  dispatchWebhook(shift.employerId, "shift.applied", {
+    shiftId,
+    applicationId: application.id,
+    workerName: session.user?.name ?? "Onbekend",
+    workerEmail: session.user?.email ?? "",
+  }).catch(() => {});
 
   // Notify employer
   const employer = await prisma.employer.findUnique({
