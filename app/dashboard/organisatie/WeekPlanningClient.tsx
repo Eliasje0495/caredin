@@ -54,12 +54,19 @@ interface Shift {
   applications: { id: string; user: { name: string } }[];
 }
 
-interface Props {
-  initialShifts: Shift[];
-  initialWeekStart: string; // ISO string of Monday
+interface Stats {
+  pendingCheckouts: number;
+  pendingApplications: number;
+  openShiftsTotal: number;
 }
 
-export default function WeekPlanningClient({ initialShifts, initialWeekStart }: Props) {
+interface Props {
+  initialShifts: Shift[];
+  initialWeekStart: string;
+  stats?: Stats;
+}
+
+export default function WeekPlanningClient({ initialShifts, initialWeekStart, stats }: Props) {
   const [weekStart, setWeekStart] = useState(new Date(initialWeekStart));
   const [shifts, setShifts] = useState<Shift[]>(initialShifts);
   const [loading, setLoading] = useState(false);
@@ -116,6 +123,55 @@ export default function WeekPlanningClient({ initialShifts, initialWeekStart }: 
 
   return (
     <div>
+      {/* Stats header */}
+      {stats && (
+        <div className="flex items-center gap-0 px-8 py-3 bg-white"
+          style={{ borderBottom: "0.5px solid var(--border)" }}>
+          <a href="/dashboard/organisatie/checkouts"
+            className="flex items-center gap-3 px-5 py-2 rounded-xl no-underline group transition-colors hover:bg-[var(--teal-light)] flex-1"
+            style={{ textDecoration: "none" }}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${stats.pendingCheckouts > 0 ? "text-white" : "text-[var(--teal)]"}`}
+              style={{ background: stats.pendingCheckouts > 0 ? "#7C3AED" : "var(--teal-light)" }}>
+              {stats.pendingCheckouts}
+            </div>
+            <div>
+              <div className="text-xs font-bold" style={{ color: "var(--dark)" }}>Checkouts</div>
+              <div className="text-[11px]" style={{ color: "var(--muted)" }}>
+                {stats.pendingCheckouts > 0 ? "wachten op goedkeuring" : "alles up-to-date"}
+              </div>
+            </div>
+          </a>
+          <div className="w-px h-8 flex-shrink-0" style={{ background: "var(--border)" }} />
+          <a href="/dashboard/organisatie/diensten"
+            className="flex items-center gap-3 px-5 py-2 rounded-xl no-underline group transition-colors hover:bg-[var(--teal-light)] flex-1"
+            style={{ textDecoration: "none" }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+              style={{ background: "var(--teal-light)", color: "var(--teal)" }}>
+              {stats.openShiftsTotal}
+            </div>
+            <div>
+              <div className="text-xs font-bold" style={{ color: "var(--dark)" }}>Open diensten</div>
+              <div className="text-[11px]" style={{ color: "var(--muted)" }}>zoeken nog personeel</div>
+            </div>
+          </a>
+          <div className="w-px h-8 flex-shrink-0" style={{ background: "var(--border)" }} />
+          <a href="/dashboard/organisatie/diensten"
+            className="flex items-center gap-3 px-5 py-2 rounded-xl no-underline group transition-colors hover:bg-[var(--teal-light)] flex-1"
+            style={{ textDecoration: "none" }}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${stats.pendingApplications > 0 ? "text-white" : "text-[var(--teal)]"}`}
+              style={{ background: stats.pendingApplications > 0 ? "var(--teal)" : "var(--teal-light)" }}>
+              {stats.pendingApplications}
+            </div>
+            <div>
+              <div className="text-xs font-bold" style={{ color: "var(--dark)" }}>Aanmeldingen</div>
+              <div className="text-[11px]" style={{ color: "var(--muted)" }}>
+                {stats.pendingApplications > 0 ? "wachten op reactie" : "geen nieuw"}
+              </div>
+            </div>
+          </a>
+        </div>
+      )}
+
       {/* Planning toolbar */}
       <div className="flex items-center gap-3 px-8 py-4 bg-white"
         style={{ borderBottom: "0.5px solid var(--border)" }}>

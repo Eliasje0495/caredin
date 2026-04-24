@@ -52,6 +52,11 @@ export default async function DienstenPage() {
             </h1>
             <p className="text-sm" style={{ color: "var(--muted)" }}>{shifts.length} dienst{shifts.length !== 1 ? "en" : ""} geplaatst</p>
           </div>
+          <Link href="/dashboard/organisatie/diensten/nieuw"
+            className="px-5 py-2.5 rounded-[40px] text-sm font-semibold text-white no-underline flex-shrink-0"
+            style={{ background: "var(--teal)" }}>
+            + Dienst plaatsen
+          </Link>
         </div>
 
         {shifts.length === 0 ? (

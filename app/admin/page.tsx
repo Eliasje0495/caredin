@@ -44,6 +44,9 @@ export default async function AdminDashboardPage() {
     pendingBig,
     openShifts,
     recentApplications,
+    recentUsers,
+    pendingCheckouts,
+    totalRevenue,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.workerProfile.count(),
@@ -53,21 +56,36 @@ export default async function AdminDashboardPage() {
     prisma.shift.count({ where: { status: "OPEN" } }),
     prisma.shiftApplication.findMany({
       orderBy: { appliedAt: "desc" },
-      take: 5,
+      take: 8,
       include: {
         user: { select: { name: true, email: true } },
-        shift: { select: { title: true } },
+        shift: { select: { title: true, employer: { select: { companyName: true } } } },
       },
+    }),
+    prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+    }),
+    prisma.shiftApplication.count({ where: { status: "COMPLETED" } }),
+    prisma.shiftApplication.aggregate({
+      where: { status: "APPROVED" },
+      _sum: { platformFee: true },
     }),
   ]);
 
+  const platformRevenue = Number(totalRevenue._sum.platformFee ?? 0);
+
   const stats = [
-    { label: "Totaal gebruikers",       value: totalUsers,     sub: "geregistreerde accounts" },
-    { label: "Zorgprofessionals",        value: totalWorkers,   sub: "worker profielen" },
-    { label: "Zorginstellingen",         value: totalEmployers, sub: "werkgevers" },
-    { label: "Totaal diensten",          value: totalShifts,    sub: "alle diensten" },
-    { label: "Registratieverificaties",         value: pendingBig,     sub: "wacht op beoordeling", alert: pendingBig > 0 },
-    { label: "Open diensten",            value: openShifts,     sub: "actief beschikbaar" },
+    { label: "Totaal gebruikers",        value: totalUsers,     sub: "geregistreerde accounts" },
+    { label: "Zorgprofessionals",         value: totalWorkers,   sub: "worker profielen" },
+    { label: "Zorginstellingen",          value: totalEmployers, sub: "werkgevers" },
+    { label: "Totaal diensten",           value: totalShifts,    sub: "alle diensten" },
+    { label: "Registratieverificaties",   value: pendingBig,     sub: "wacht op beoordeling", alert: pendingBig > 0 },
+    { label: "Open diensten",             value: openShifts,     sub: "actief beschikbaar" },
+    { label: "Checkouts te beoordelen",   value: pendingCheckouts, sub: "wachten op goedkeuring", alert: pendingCheckouts > 0 },
+    { label: "Platform omzet",            value: `€${platformRevenue.toFixed(0)}`, sub: "totaal platformfee" },
+    { label: "Nieuwe gebruikers (recent)",value: recentUsers.length, sub: "laatste aanmeldingen" },
   ];
 
   const quickActions = [
@@ -134,7 +152,50 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 24 }}>
+        {/* Recent users */}
+        <div style={{ background: "#fff", borderRadius: 16, border: "0.5px solid rgba(26,122,106,0.15)", overflow: "hidden" }}>
+          <div style={{ padding: "16px 24px", borderBottom: "0.5px solid rgba(26,122,106,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: "#0F1C1A", margin: 0 }}>Nieuwe gebruikers</h2>
+            <Link href="/admin/gebruikers" style={{ fontSize: 12, color: "#1A7A6A", textDecoration: "none", fontWeight: 500 }}>Alle bekijken →</Link>
+          </div>
+          <div>
+            {recentUsers.map((u) => (
+              <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 24px", borderBottom: "0.5px solid rgba(26,122,106,0.08)" }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1A7A6A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                  {(u.name?.[0] ?? u.email[0]).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#0F1C1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.name ?? u.email}</div>
+                  <div style={{ fontSize: 11, color: "#5A7570" }}>{u.role === "EMPLOYER" ? "Instelling" : "Professional"} · {new Date(u.createdAt).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}</div>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 99, background: u.role === "EMPLOYER" ? "#DBEAFE" : "#D1FAE5", color: u.role === "EMPLOYER" ? "#1E40AF" : "#065F46", flexShrink: 0 }}>
+                  {u.role === "EMPLOYER" ? "Instelling" : "ZZP'er"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick actions */}
+        <div style={{ background: "#fff", borderRadius: 16, border: "0.5px solid rgba(26,122,106,0.15)", overflow: "hidden" }}>
+          <div style={{ padding: "16px 24px", borderBottom: "0.5px solid rgba(26,122,106,0.15)" }}>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: "#0F1C1A", margin: 0 }}>Snelle acties</h2>
+          </div>
+          <div style={{ padding: "12px" }}>
+            {quickActions.map((a) => (
+              <Link key={a.href} href={a.href}
+                style={{ display: "block", padding: "12px 16px", borderRadius: 10, textDecoration: "none", marginBottom: 4 }}
+                className="admin-quick-action">
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#0F1C1A" }}>{a.label}</div>
+                <div style={{ fontSize: 12, color: "#5A7570", marginTop: 2 }}>{a.desc}</div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }}>
         {/* Recent applications */}
         <div
           style={{
@@ -166,7 +227,7 @@ export default async function AdminDashboardPage() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#F9FAFB" }}>
-                {["Professional", "Dienst", "Status", "Datum"].map((h) => (
+                {["Professional", "Dienst · Instelling", "Status", "Datum"].map((h) => (
                   <th
                     key={h}
                     style={{
@@ -193,6 +254,7 @@ export default async function AdminDashboardPage() {
                   </td>
                   <td style={{ padding: "12px 24px", fontSize: 13, color: "#5A7570" }}>
                     {app.shift.title}
+                    <span style={{ fontSize: 11, color: "#9CA3AF", marginLeft: 6 }}>· {(app.shift as any).employer?.companyName}</span>
                   </td>
                   <td style={{ padding: "12px 24px" }}>
                     <StatusBadge status={app.status} />
@@ -216,46 +278,6 @@ export default async function AdminDashboardPage() {
           </table>
         </div>
 
-        {/* Quick actions */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 16,
-            border: "0.5px solid rgba(26,122,106,0.15)",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              padding: "16px 24px",
-              borderBottom: "0.5px solid rgba(26,122,106,0.15)",
-            }}
-          >
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: "#0F1C1A", margin: 0 }}>
-              Snelle acties
-            </h2>
-          </div>
-          <div style={{ padding: "12px" }}>
-            {quickActions.map((a) => (
-              <Link
-                key={a.href}
-                href={a.href}
-                style={{
-                  display: "block",
-                  padding: "12px 16px",
-                  borderRadius: 10,
-                  textDecoration: "none",
-                  marginBottom: 4,
-                  transition: "background 0.15s",
-                }}
-                className="admin-quick-action"
-              >
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#0F1C1A" }}>{a.label}</div>
-                <div style={{ fontSize: 12, color: "#5A7570", marginTop: 2 }}>{a.desc}</div>
-              </Link>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

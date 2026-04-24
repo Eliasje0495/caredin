@@ -25,23 +25,29 @@ export default async function OrganisatieDashboard() {
   const sunday = new Date(monday);
   sunday.setDate(sunday.getDate() + 7);
 
-  const shifts = await prisma.shift.findMany({
-    where: { employerId: employer.id, startTime: { gte: monday, lt: sunday } },
-    include: {
-      _count: { select: { applications: true } },
-      applications: {
-        where: { status: "ACCEPTED" },
-        select: { id: true, user: { select: { name: true } } },
-        take: 1,
+  const [shifts, pendingCheckouts, pendingApplications, openShiftsTotal] = await Promise.all([
+    prisma.shift.findMany({
+      where: { employerId: employer.id, startTime: { gte: monday, lt: sunday } },
+      include: {
+        _count: { select: { applications: true } },
+        applications: {
+          where: { status: "ACCEPTED" },
+          select: { id: true, user: { select: { name: true } } },
+          take: 1,
+        },
       },
-    },
-    orderBy: { startTime: "asc" },
-  });
+      orderBy: { startTime: "asc" },
+    }),
+    prisma.shiftApplication.count({ where: { status: "COMPLETED", shift: { employerId: employer.id } } }),
+    prisma.shiftApplication.count({ where: { status: "PENDING",   shift: { employerId: employer.id } } }),
+    prisma.shift.count({ where: { employerId: employer.id, status: "OPEN" } }),
+  ]);
 
   return (
     <WeekPlanningClient
       initialShifts={JSON.parse(JSON.stringify(shifts))}
       initialWeekStart={monday.toISOString()}
+      stats={{ pendingCheckouts, pendingApplications, openShiftsTotal }}
     />
   );
 }
