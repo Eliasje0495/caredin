@@ -72,7 +72,7 @@ export async function verifyBigNumber(bigNumber: string): Promise<BigResult> {
     const name        = [initial, prefix, mailingName].filter(Boolean).join(" ") || undefined;
 
     // Registraties uitlezen
-    const regMatches = [...xml.matchAll(/<(?:[^:]+:)?ArticleRegistrationExtApp[^>]*>([\s\S]*?)<\/(?:[^:]+:)?ArticleRegistrationExtApp>/g)];
+    const regMatches = Array.from(xml.matchAll(/<(?:[^:]+:)?ArticleRegistrationExtApp[^>]*>([\s\S]*?)<\/(?:[^:]+:)?ArticleRegistrationExtApp>/g));
 
     if (regMatches.length === 0) {
       return { valid: false, name, error: "BIG-nummer niet gevonden in het register" };
