@@ -143,13 +143,35 @@ export async function GET(req: NextRequest) {
     // Fallback: first result
     if (!match) match = results[0];
 
+    const geregistreerd = match.status === "registered";
+
+    // Controleer of de naam in het SKJ-register overeenkomt met de accountnaam
+    if (geregistreerd) {
+      const { getServerSession } = await import("next-auth");
+      const { authOptions } = await import("@/lib/auth");
+      const { nameMatchesAccount } = await import("@/lib/name-match");
+      const session = await getServerSession(authOptions);
+      if (session?.user?.name && match.full_name) {
+        if (!nameMatchesAccount(match.full_name, session.user.name)) {
+          return NextResponse.json({
+            nummer,
+            gevonden: true,
+            geregistreerd: false,
+            naam: match.full_name,
+            nameMismatch: true,
+            error: "Het SKJ-nummer is niet gekoppeld aan de naam op dit account.",
+          });
+        }
+      }
+    }
+
     return NextResponse.json({
       nummer,
       gevonden: true,
       registratienummer: match.registration_number,
       naam: match.full_name,
-      status: match.status, // "registered" | "unsubscribed"
-      geregistreerd: match.status === "registered",
+      status: match.status,
+      geregistreerd,
       register: match.register,
       niveau: match.level,
       functie: match.job_title,
