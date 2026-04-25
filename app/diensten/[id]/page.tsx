@@ -50,11 +50,25 @@ export default async function DienstDetailPage({
   const shift = await prisma.shift.findUnique({
     where: { id: params.id },
     include: {
-      employer: true,
+      employer: { include: { user: { select: { id: true } } } },
       _count: { select: { applications: true } },
     },
   });
   if (!shift) notFound();
+
+  // Reviews over de instelling (door professionals die er gewerkt hebben)
+  const employerUserId = (shift.employer as any).user?.id ?? null;
+  const employerReviews = employerUserId
+    ? await prisma.review.findMany({
+        where: { reviewedId: employerUserId },
+        include: { reviewer: { select: { name: true, workerProfile: { select: { primaryFunction: true } } } } },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      })
+    : [];
+  const avgRating = employerReviews.length
+    ? employerReviews.reduce((s, r) => s + r.rating, 0) / employerReviews.length
+    : null;
 
   let existingApplication = null;
   if (userId) {
@@ -369,6 +383,96 @@ export default async function DienstDetailPage({
                   </div>
                 </div>
               </div>
+
+              {/* ── Beoordelingen van de instelling ── */}
+              <div
+                className="rounded-2xl bg-white p-6"
+                style={{ border: "0.5px solid var(--border)" }}
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <h2
+                    className="text-lg font-bold"
+                    style={{ fontFamily: "var(--font-fraunces)", color: "var(--dark)" }}
+                  >
+                    Beoordelingen instelling
+                  </h2>
+                  {avgRating !== null && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-0.5">
+                        {[1,2,3,4,5].map(i => (
+                          <span key={i} style={{ color: i <= Math.round(avgRating) ? "#F5A623" : "var(--border)", fontSize: "15px" }}>★</span>
+                        ))}
+                      </div>
+                      <span className="text-base font-bold" style={{ fontFamily: "var(--font-fraunces)", color: "var(--teal)" }}>
+                        {avgRating.toFixed(1)}
+                      </span>
+                      <span className="text-xs" style={{ color: "var(--muted)" }}>
+                        ({employerReviews.length} {employerReviews.length === 1 ? "beoordeling" : "beoordelingen"})
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {employerReviews.length === 0 ? (
+                  <div className="rounded-xl px-5 py-8 text-center" style={{ background: "var(--bg)" }}>
+                    <div className="text-3xl mb-2">⭐</div>
+                    <p className="text-sm" style={{ color: "var(--muted)" }}>
+                      Nog geen beoordelingen voor deze instelling.
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+                      Professionals kunnen een beoordeling achterlaten na afloop van een dienst.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {employerReviews.map((r) => {
+                      const rev = r as any;
+                      const firstName = rev.reviewer?.name?.split(" ")[0] ?? "Professional";
+                      const funcLabel = FUNCTION_LABELS[rev.reviewer?.workerProfile?.primaryFunction ?? ""] ?? null;
+                      return (
+                        <div
+                          key={r.id}
+                          className="rounded-xl px-4 py-4"
+                          style={{ background: "var(--bg)", border: "0.5px solid var(--border)" }}
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                                style={{ background: "var(--teal)" }}
+                              >
+                                {firstName[0]?.toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold truncate" style={{ color: "var(--dark)" }}>
+                                  {firstName}
+                                  {funcLabel ? (
+                                    <span className="font-normal text-xs ml-1.5" style={{ color: "var(--muted)" }}>· {funcLabel}</span>
+                                  ) : null}
+                                </div>
+                                <div className="text-xs" style={{ color: "var(--muted)" }}>
+                                  {new Date(r.createdAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-0.5 flex-shrink-0">
+                              {[1,2,3,4,5].map(i => (
+                                <span key={i} style={{ color: i <= r.rating ? "#F5A623" : "var(--border)", fontSize: "14px" }}>★</span>
+                              ))}
+                            </div>
+                          </div>
+                          {r.comment && (
+                            <p className="text-sm leading-relaxed mt-2" style={{ color: "var(--muted)" }}>
+                              &ldquo;{r.comment}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
             </div>
 
             {/* ── RIGHT column (2fr) ── */}
@@ -456,11 +560,18 @@ export default async function DienstDetailPage({
                     shiftId={shift.id}
                     applicationStatus={existingApplication?.status ?? null}
                     shiftStatus={shift.status}
+                    isLoggedIn={true}
                   />
                 ) : (
                   <div>
+                    <ApplyButton
+                      shiftId={shift.id}
+                      applicationStatus={null}
+                      shiftStatus={shift.status}
+                      isLoggedIn={false}
+                    />
                     <p
-                      className="text-sm text-center mb-4 font-medium"
+                      className="text-sm text-center mb-4 font-medium mt-3"
                       style={{ color: "var(--muted)" }}
                     >
                       Aanmelden vereist een account

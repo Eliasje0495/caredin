@@ -163,6 +163,129 @@ export const emails = {
       `)
     ),
 
+  declaratieIngediend: (to: string, companyName: string, workerName: string, nummer: string, bedrag: string) =>
+    sendEmail(
+      to,
+      `Declaratie ${nummer} ingediend door ${workerName}`,
+      emailTemplate(`
+        <h2 style="margin:0 0 16px;font-size:22px;color:#0F1C1A;">Nieuwe declaratie ontvangen</h2>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374846;">
+          <strong style="color:#0F1C1A;">${workerName}</strong> heeft declaratie
+          <strong style="color:#0F1C1A;">${nummer}</strong> ingediend voor een bedrag van
+          <strong style="color:#1A7A6A;">€${bedrag}</strong>.
+        </p>
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374846;">
+          Bekijk de declaratie in je dashboard en keur deze goed of wijs hem af.
+        </p>
+        <a href="https://caredin.nl/dashboard/organisatie/declaraties"
+           style="display:inline-block;background:#1A7A6A;color:#fff;padding:14px 28px;border-radius:40px;text-decoration:none;font-weight:600;font-size:14px;">
+          Declaraties bekijken →
+        </a>
+      `)
+    ),
+
+  declaratieGoedgekeurd: (to: string, workerName: string, nummer: string, bedrag: string) =>
+    sendEmail(
+      to,
+      `Declaratie ${nummer} goedgekeurd`,
+      emailTemplate(`
+        <h2 style="margin:0 0 16px;font-size:22px;color:#0F1C1A;">Je declaratie is goedgekeurd ✅</h2>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374846;">
+          Hoi ${workerName.split(" ")[0]}, declaratie <strong style="color:#0F1C1A;">${nummer}</strong> is goedgekeurd
+          voor een bedrag van <strong style="color:#1A7A6A;">€${bedrag}</strong>.
+        </p>
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374846;">
+          De opdrachtgever verwerkt de betaling zo spoedig mogelijk.
+        </p>
+        <a href="https://caredin.nl/dashboard/zzper/declaraties"
+           style="display:inline-block;background:#1A7A6A;color:#fff;padding:14px 28px;border-radius:40px;text-decoration:none;font-weight:600;font-size:14px;">
+          Bekijk je declaraties →
+        </a>
+      `)
+    ),
+
+  declaratieAfgewezen: (to: string, workerName: string, nummer: string, reden: string) =>
+    sendEmail(
+      to,
+      `Declaratie ${nummer} afgewezen`,
+      emailTemplate(`
+        <h2 style="margin:0 0 16px;font-size:22px;color:#0F1C1A;">Declaratie niet goedgekeurd</h2>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374846;">
+          Hoi ${workerName.split(" ")[0]}, declaratie <strong style="color:#0F1C1A;">${nummer}</strong> is helaas afgewezen.
+        </p>
+        <div style="background:#FEF2F2;border-radius:12px;padding:16px 20px;margin:0 0 24px;">
+          <div style="font-size:12px;font-weight:700;color:#991B1B;margin-bottom:4px;">Reden</div>
+          <div style="font-size:14px;color:#374846;">${reden}</div>
+        </div>
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374846;">
+          Je kunt de declaratie herroepen, aanpassen en opnieuw indienen.
+        </p>
+        <a href="https://caredin.nl/dashboard/zzper/declaraties"
+           style="display:inline-block;background:#1A7A6A;color:#fff;padding:14px 28px;border-radius:40px;text-decoration:none;font-weight:600;font-size:14px;">
+          Naar mijn declaraties →
+        </a>
+      `)
+    ),
+
+  shiftReminder: (
+    to: string,
+    workerName: string,
+    shiftTitle: string,
+    companyName: string,
+    dateStr: string,
+    timeStr: string,
+    address: string,
+    hourlyRate: string,
+  ) =>
+    sendEmail(
+      to,
+      `⏰ Morgen: ${shiftTitle} bij ${companyName}`,
+      emailTemplate(`
+        <h2 style="margin:0 0 8px;font-size:22px;color:#0F1C1A;">Herinnering: morgen heb je een dienst</h2>
+        <p style="margin:0 0 20px;font-size:13px;color:#7A9994;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">
+          ${shiftTitle} · ${companyName}
+        </p>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374846;">
+          Hoi ${workerName.split(" ")[0]}, vergeet je dienst van morgen niet!
+        </p>
+        <div style="background:#F0F7F5;border-radius:12px;padding:20px;margin:0 0 24px;">
+          <table cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td style="padding:6px 0;">
+                <span style="font-size:13px;font-weight:700;color:#0F1C1A;">📅 Datum &amp; tijd</span>
+              </td>
+              <td style="padding:6px 0;text-align:right;">
+                <span style="font-size:13px;color:#374846;">${dateStr} · ${timeStr}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;">
+                <span style="font-size:13px;font-weight:700;color:#0F1C1A;">📍 Locatie</span>
+              </td>
+              <td style="padding:6px 0;text-align:right;">
+                <span style="font-size:13px;color:#374846;">${address}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;">
+                <span style="font-size:13px;font-weight:700;color:#0F1C1A;">💶 Tarief</span>
+              </td>
+              <td style="padding:6px 0;text-align:right;">
+                <span style="font-size:13px;color:#374846;">€${hourlyRate}/uur</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374846;">
+          Zorg dat je op tijd bent en vergeet je urenregistratie niet na afloop.
+        </p>
+        <a href="https://caredin.nl/dashboard/zzper/timesheets"
+           style="display:inline-block;background:#1A7A6A;color:#fff;padding:14px 28px;border-radius:40px;text-decoration:none;font-weight:600;font-size:14px;">
+          Bekijk je timesheets →
+        </a>
+      `)
+    ),
+
   identityCheck: (to: string, name: string, shiftTitle: string, startTime: string, verifyUrl: string) =>
     sendEmail(
       to,

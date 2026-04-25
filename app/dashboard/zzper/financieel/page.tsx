@@ -22,6 +22,29 @@ export default async function FinancieelPage() {
   const totalHours  = Number(profile?.totalHours ?? 0);
   const avgRate     = totalHours > 0 ? totalEarned / totalHours : 0;
 
+  // Monthly earnings for last 6 months
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const monthlyApps = await prisma.shiftApplication.findMany({
+    where: { userId, status: "APPROVED", paidAt: { gte: sixMonthsAgo } },
+    select: { paidAt: true, payoutAmount: true },
+  });
+
+  const monthlyMap: Record<string, number> = {};
+  for (const app of monthlyApps) {
+    if (!app.paidAt) continue;
+    const key = app.paidAt.toLocaleDateString("nl-NL", { month: "short", year: "2-digit" });
+    monthlyMap[key] = (monthlyMap[key] ?? 0) + Number(app.payoutAmount ?? 0);
+  }
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (5 - i));
+    return d.toLocaleDateString("nl-NL", { month: "short", year: "2-digit" });
+  });
+  const monthlyData = months.map(m => ({ month: m, amount: monthlyMap[m] ?? 0 }));
+  const maxAmount = Math.max(...monthlyData.map(d => d.amount), 1);
+
   return (
     <div className="px-8 py-10">
       <div className="max-w-3xl mx-auto">
@@ -42,6 +65,29 @@ export default async function FinancieelPage() {
               <div className="text-xs" style={{ color: "var(--muted)" }}>{s.label}</div>
             </div>
           ))}
+        </div>
+
+        {/* Monthly earnings chart */}
+        <div className="rounded-2xl bg-white p-5 mb-6" style={{ border: "0.5px solid var(--border)" }}>
+          <div className="text-sm font-semibold mb-4" style={{ color: "var(--dark)" }}>Verdiensten per maand</div>
+          <div className="flex items-end gap-2 h-24">
+            {monthlyData.map((d) => (
+              <div key={d.month} className="flex-1 flex flex-col items-center gap-1">
+                <div className="text-[10px] font-semibold" style={{ color: "var(--teal)" }}>
+                  {d.amount > 0 ? `€${d.amount.toFixed(0)}` : ""}
+                </div>
+                <div
+                  className="w-full rounded-t-lg transition-all"
+                  style={{
+                    height: `${Math.max((d.amount / maxAmount) * 72, d.amount > 0 ? 4 : 0)}px`,
+                    background: d.amount > 0 ? "var(--teal)" : "var(--teal-light)",
+                    minHeight: d.amount > 0 ? "4px" : "2px",
+                  }}
+                />
+                <div className="text-[10px]" style={{ color: "var(--muted)" }}>{d.month}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Stripe Connect */}

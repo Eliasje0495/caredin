@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 interface Props {
   shiftId: string;
@@ -10,10 +10,8 @@ interface Props {
 }
 
 export default function SolliciterenButton({ shiftId, shiftStatus, isLoggedIn, hasApplied }: Props) {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [applied, setApplied] = useState(hasApplied);
-  const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const justApplied = searchParams.get("aangemeld") === "1";
 
   if (shiftStatus !== "OPEN") {
     return (
@@ -26,7 +24,7 @@ export default function SolliciterenButton({ shiftId, shiftStatus, isLoggedIn, h
 
   if (!isLoggedIn) {
     return (
-      <a href={`/inloggen?redirect=/vacatures/${shiftId}`}
+      <a href={`/inloggen?redirect=/vacatures/${shiftId}/aanmelden`}
         className="block w-full py-3 rounded-[40px] text-[14px] font-semibold text-white text-center no-underline"
         style={{ background: "var(--teal)" }}>
         Inloggen om te aanmelden →
@@ -34,7 +32,7 @@ export default function SolliciterenButton({ shiftId, shiftStatus, isLoggedIn, h
     );
   }
 
-  if (applied) {
+  if (hasApplied || justApplied) {
     return (
       <div className="w-full py-3 rounded-[40px] text-sm font-semibold text-center"
         style={{ background: "var(--teal-light)", color: "var(--teal)" }}>
@@ -43,28 +41,13 @@ export default function SolliciterenButton({ shiftId, shiftStatus, isLoggedIn, h
     );
   }
 
-  async function handleApply() {
-    setLoading(true);
-    setError("");
-    const res = await fetch(`/api/shifts/${shiftId}/apply`, { method: "POST" });
-    setLoading(false);
-    if (res.ok) {
-      setApplied(true);
-      router.refresh();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Er ging iets mis.");
-    }
-  }
-
   return (
-    <div>
-      <button onClick={handleApply} disabled={loading}
-        className="w-full py-3 rounded-[40px] text-[14px] font-semibold text-white disabled:opacity-60 cursor-pointer"
-        style={{ background: "var(--teal)", fontFamily: "inherit", border: "none" }}>
-        {loading ? "Bezig…" : "Solliciteren →"}
-      </button>
-      {error && <p className="text-xs mt-2 text-center" style={{ color: "#dc2626" }}>{error}</p>}
-    </div>
+    <Link
+      href={`/vacatures/${shiftId}/aanmelden`}
+      className="block w-full py-3 rounded-[40px] text-[14px] font-semibold text-white text-center no-underline"
+      style={{ background: "var(--teal)" }}
+    >
+      Solliciteren →
+    </Link>
   );
 }

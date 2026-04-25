@@ -11,8 +11,9 @@ export default async function VerzekeringenPage() {
     {
       icon: "🛡️",
       title: "Beroepsaansprakelijkheidsverzekering",
-      desc: "Verplicht voor ZZP&apos;ers. Dekt schade aan derden tijdens de uitvoering van je werk.",
-      partner: "Via CaredIn partner",
+      desc: "Verplicht voor ZZP'ers. Dekt schade aan derden tijdens de uitvoering van je werk.",
+      ctaLabel: "Vergelijk op Independer",
+      ctaHref: "https://www.independer.nl/zakelijke-verzekeringen/beroepsaansprakelijkheid.aspx",
       price: "Vanaf €15/maand",
       badge: "Aanbevolen",
       badgeColor: "var(--teal)",
@@ -21,7 +22,8 @@ export default async function VerzekeringenPage() {
       icon: "🏥",
       title: "Arbeidsongeschiktheidsverzekering (AOV)",
       desc: "Beschermt je inkomen als je door ziekte of letsel niet kunt werken.",
-      partner: "Vergelijk aanbieders",
+      ctaLabel: "Vergelijk op Independer",
+      ctaHref: "https://www.independer.nl/aov/intro.aspx",
       price: "Vanaf €80/maand",
       badge: "Belangrijk",
       badgeColor: "#1E40AF",
@@ -29,8 +31,9 @@ export default async function VerzekeringenPage() {
     {
       icon: "💰",
       title: "Pensioenopbouw",
-      desc: "Als ZZP&apos;er bouw je geen automatisch pensioen op. Regel het zelf via lijfrente of banksparen.",
-      partner: "Meer informatie",
+      desc: "Als ZZP'er bouw je geen automatisch pensioen op. Regel het zelf via lijfrente of banksparen.",
+      ctaLabel: "Bekijk opties bij Brand New Day",
+      ctaHref: "https://www.brandnewday.nl/zzp/pensioen/",
       price: "Zelf in te stellen",
       badge: "Optioneel",
       badgeColor: "#6B7280",
@@ -67,10 +70,11 @@ export default async function VerzekeringenPage() {
                 <p className="text-[12px] leading-[1.65] mb-3" style={{ color: "var(--muted)" }}>{opt.desc}</p>
                 <div className="flex items-center gap-4">
                   <span className="text-[12px] font-semibold" style={{ color: "var(--teal)" }}>{opt.price}</span>
-                  <button disabled className="text-[12px] font-semibold px-4 py-1.5 rounded-[40px] opacity-50 cursor-not-allowed"
-                    style={{ background: "var(--teal-light)", color: "var(--teal)", border: "none", fontFamily: "inherit" }}>
-                    {opt.partner} (binnenkort)
-                  </button>
+                  <a href={opt.ctaHref} target="_blank" rel="noopener noreferrer"
+                    className="text-[12px] font-semibold px-4 py-1.5 rounded-[40px] no-underline"
+                    style={{ background: "var(--teal-light)", color: "var(--teal)" }}>
+                    {opt.ctaLabel} →
+                  </a>
                 </div>
               </div>
             </div>

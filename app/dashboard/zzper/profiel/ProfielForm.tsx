@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 interface InitialData {
   name: string;
@@ -27,15 +27,55 @@ export default function ProfielForm({ initialData }: { initialData: InitialData 
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [bigLookup, setBigLookup] = useState<{ loading: boolean; name?: string; profession?: string; valid?: boolean; error?: string }>({ loading: false });
+  const [skjLookup, setSkjLookup] = useState<{ loading: boolean; naam?: string; valid?: boolean; error?: string }>({ loading: false });
+  const bigTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skjTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function set(field: keyof InitialData) {
     return (
       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
       setSaved(false);
-      setData((d) => ({ ...d, [field]: e.target.value }));
+      const value = e.target.value;
+      setData((d) => ({ ...d, [field]: value }));
+      if (field === "bigNumber") triggerBigLookup(value);
+      if (field === "skjNumber") triggerSkjLookup(value);
     };
   }
+
+  function triggerBigLookup(value: string) {
+    if (bigTimer.current) clearTimeout(bigTimer.current);
+    const cleaned = value.replace(/\s/g, "");
+    if (cleaned.length !== 11) { setBigLookup({ loading: false }); return; }
+    setBigLookup({ loading: true });
+    bigTimer.current = setTimeout(async () => {
+      const res = await fetch(`/api/big?number=${cleaned}`).catch(() => null);
+      if (!res) { setBigLookup({ loading: false, error: "Verbinding mislukt" }); return; }
+      const d = await res.json();
+      setBigLookup({ loading: false, valid: d.valid, name: d.name, profession: d.profession, error: d.error });
+    }, 600);
+  }
+
+  function triggerSkjLookup(value: string) {
+    if (skjTimer.current) clearTimeout(skjTimer.current);
+    const cleaned = value.replace(/\s/g, "");
+    if (cleaned.length < 4) { setSkjLookup({ loading: false }); return; }
+    setSkjLookup({ loading: true });
+    skjTimer.current = setTimeout(async () => {
+      const res = await fetch(`/api/verify/skj?nummer=${cleaned}`).catch(() => null);
+      if (!res) { setSkjLookup({ loading: false, error: "Verbinding mislukt" }); return; }
+      const d = await res.json();
+      setSkjLookup({ loading: false, valid: d.geregistreerd, naam: d.naam, error: d.geregistreerd === false ? "SKJ-nummer niet actief of niet gevonden" : undefined });
+    }, 600);
+  }
+
+  // Initieel laden als er al nummers ingevuld zijn
+  useEffect(() => {
+    if (initialData.bigNumber) triggerBigLookup(initialData.bigNumber);
+    if (initialData.skjNumber) triggerSkjLookup(initialData.skjNumber);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -199,20 +239,46 @@ export default function ProfielForm({ initialData }: { initialData: InitialData 
           <SectionHeading>Beroepsregistraties</SectionHeading>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <F label="BIG-nummer">
-              <input
-                value={data.bigNumber}
-                onChange={set("bigNumber")}
-                placeholder="12345678"
-              />
-            </F>
-            <F label="SKJ-nummer">
-              <input
-                value={data.skjNumber}
-                onChange={set("skjNumber")}
-                placeholder="12345678"
-              />
-            </F>
+            <div>
+              <F label="BIG-nummer">
+                <input
+                  value={data.bigNumber}
+                  onChange={set("bigNumber")}
+                  placeholder="11-cijferig BIG-nummer"
+                />
+              </F>
+              {bigLookup.loading && (
+                <p className="text-xs mt-1.5" style={{ color: "var(--teal)" }}>Zoeken in BIG-register…</p>
+              )}
+              {!bigLookup.loading && bigLookup.valid && bigLookup.name && (
+                <p className="text-xs mt-1.5 font-semibold" style={{ color: "#065F46" }}>
+                  ✓ {bigLookup.name}{bigLookup.profession ? ` — ${bigLookup.profession}` : ""}
+                </p>
+              )}
+              {!bigLookup.loading && bigLookup.valid === false && (
+                <p className="text-xs mt-1.5" style={{ color: "#991B1B" }}>{bigLookup.error ?? "BIG-nummer niet gevonden"}</p>
+              )}
+            </div>
+            <div>
+              <F label="SKJ-nummer">
+                <input
+                  value={data.skjNumber}
+                  onChange={set("skjNumber")}
+                  placeholder="SKJ-registratienummer"
+                />
+              </F>
+              {skjLookup.loading && (
+                <p className="text-xs mt-1.5" style={{ color: "var(--teal)" }}>Zoeken in SKJ-register…</p>
+              )}
+              {!skjLookup.loading && skjLookup.valid && skjLookup.naam && (
+                <p className="text-xs mt-1.5 font-semibold" style={{ color: "#065F46" }}>
+                  ✓ {skjLookup.naam}
+                </p>
+              )}
+              {!skjLookup.loading && skjLookup.valid === false && (
+                <p className="text-xs mt-1.5" style={{ color: "#991B1B" }}>{skjLookup.error ?? "SKJ-nummer niet gevonden"}</p>
+              )}
+            </div>
           </div>
 
           {data.contractType === "ZZP" && (

@@ -12,7 +12,11 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
 
   const app = await prisma.shiftApplication.findFirst({
     where: { shiftId: params.id, userId, status: "ACCEPTED" },
-    include: { shift: true },
+    include: {
+      shift: {
+        include: { employer: { include: { user: { select: { id: true } } } } },
+      },
+    },
   });
   if (!app) return NextResponse.json({ error: "Geen geaccepteerde aanmelding gevonden." }, { status: 404 });
   if (!app.checkedInAt) return NextResponse.json({ error: "Nog niet ingecheckt." }, { status: 400 });
@@ -37,6 +41,21 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     where: { id: params.id },
     data: { status: "COMPLETED" },
   });
+
+  // Notify employer about checkout
+  const employerUserId = (app.shift as any).employer?.user?.id as string | undefined;
+  if (employerUserId) {
+    const workerName = session?.user?.name ?? "Een professional";
+    await prisma.notification.create({
+      data: {
+        userId: employerUserId,
+        type:   "CHECKOUT_PENDING",
+        title:  "Checkout ter goedkeuring",
+        body:   `${workerName} heeft uitgecheckt bij "${app.shift.title}". Beoordeel de uren.`,
+        href:   `/dashboard/organisatie/checkouts`,
+      },
+    });
+  }
 
   return NextResponse.json({ ok: true, hoursWorked: Math.round(hoursWorked * 100) / 100 });
 }

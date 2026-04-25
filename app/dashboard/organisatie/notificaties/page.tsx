@@ -1,30 +1,54 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const SETTINGS = [
-  { id: "new_application",   label: "Nieuwe aanmelding",        desc: "Wanneer een professional zich aanmeldt voor een van je diensten." },
-  { id: "checkout_pending",  label: "Checkout wacht op jou",    desc: "Wanneer een professional heeft uitgecheckt en jij de uren moet goedkeuren." },
-  { id: "auto_approved",     label: "Automatisch goedgekeurd",  desc: "Wanneer uren automatisch worden goedgekeurd na 7 dagen." },
-  { id: "shift_reminder",    label: "Dienst herinnering",       desc: "24 uur voor het begin van een dienst." },
-  { id: "no_applicants",     label: "Geen aanmeldingen",        desc: "Wanneer een dienst 48 uur open staat zonder aanmeldingen." },
-  { id: "platform_updates",  label: "Platform updates",         desc: "Nieuws, nieuwe functies en wijzigingen in tarieven." },
+  { id: "new_application",  label: "Nieuwe aanmelding",       desc: "Wanneer een professional zich aanmeldt voor een van je diensten." },
+  { id: "checkout_pending", label: "Checkout wacht op jou",   desc: "Wanneer een professional heeft uitgecheckt en jij de uren moet goedkeuren." },
+  { id: "auto_approved",    label: "Automatisch goedgekeurd", desc: "Wanneer uren automatisch worden goedgekeurd na 7 dagen." },
+  { id: "shift_reminder",   label: "Dienst herinnering",      desc: "24 uur voor het begin van een dienst." },
+  { id: "no_applicants",    label: "Geen aanmeldingen",       desc: "Wanneer een dienst 48 uur open staat zonder aanmeldingen." },
+  { id: "platform_updates", label: "Platform updates",        desc: "Nieuws, nieuwe functies en wijzigingen in tarieven." },
 ];
 
 export default function NotificatiesPage() {
   const [settings, setSettings] = useState<Record<string, boolean>>(
     Object.fromEntries(SETTINGS.map(s => [s.id, true]))
   );
-  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving]   = useState(false);
+  const [saved, setSaved]     = useState(false);
+  const [error, setError]     = useState("");
+
+  useEffect(() => {
+    fetch("/api/dashboard/notificaties")
+      .then(r => r.json())
+      .then(d => { if (d.settings) setSettings(d.settings); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   function toggle(id: string) {
     setSettings(prev => ({ ...prev, [id]: !prev[id] }));
     setSaved(false);
   }
 
-  function save() {
-    // TODO: persist to API
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  async function save() {
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/dashboard/notificaties", {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(settings),
+      });
+      if (!res.ok) throw new Error();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      setError("Opslaan mislukt. Probeer het opnieuw.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -38,36 +62,41 @@ export default function NotificatiesPage() {
         </div>
 
         <div className="rounded-2xl bg-white overflow-hidden" style={{ border: "0.5px solid var(--border)" }}>
-          {SETTINGS.map((s, i) => (
-            <div key={s.id}
-              className="flex items-center justify-between px-6 py-4"
-              style={{ borderBottom: i < SETTINGS.length - 1 ? "0.5px solid var(--border)" : "none" }}>
-              <div className="flex-1 pr-6">
-                <div className="text-sm font-semibold" style={{ color: "var(--dark)" }}>{s.label}</div>
-                <div className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{s.desc}</div>
+          {loading ? (
+            <div className="px-6 py-8 text-sm text-center" style={{ color: "var(--muted)" }}>Laden…</div>
+          ) : (
+            SETTINGS.map((s, i) => (
+              <div key={s.id}
+                className="flex items-center justify-between px-6 py-4"
+                style={{ borderBottom: i < SETTINGS.length - 1 ? "0.5px solid var(--border)" : "none" }}>
+                <div className="flex-1 pr-6">
+                  <div className="text-sm font-semibold" style={{ color: "var(--dark)" }}>{s.label}</div>
+                  <div className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{s.desc}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggle(s.id)}
+                  className="relative w-11 h-6 rounded-full flex-shrink-0 cursor-pointer transition-colors"
+                  style={{ background: settings[s.id] ? "var(--teal)" : "var(--border)", border: "none" }}>
+                  <span
+                    className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform"
+                    style={{ transform: settings[s.id] ? "translateX(22px)" : "translateX(2px)" }}
+                  />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => toggle(s.id)}
-                className="relative w-11 h-6 rounded-full flex-shrink-0 cursor-pointer transition-colors"
-                style={{
-                  background: settings[s.id] ? "var(--teal)" : "var(--border)",
-                  border: "none",
-                }}>
-                <span
-                  className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform"
-                  style={{ transform: settings[s.id] ? "translateX(22px)" : "translateX(2px)" }}
-                />
-              </button>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
+        {error && (
+          <p className="mt-3 text-sm font-medium" style={{ color: "#DC2626" }}>{error}</p>
+        )}
+
         <div className="mt-6 flex items-center gap-3">
-          <button onClick={save}
-            className="px-6 py-2.5 rounded-[40px] text-sm font-semibold text-white cursor-pointer"
+          <button onClick={save} disabled={saving || loading}
+            className="px-6 py-2.5 rounded-[40px] text-sm font-semibold text-white cursor-pointer disabled:opacity-50"
             style={{ background: "var(--teal)", border: "none", fontFamily: "inherit" }}>
-            Opslaan
+            {saving ? "Opslaan…" : "Opslaan"}
           </button>
           {saved && <span className="text-sm font-medium" style={{ color: "var(--teal)" }}>✓ Opgeslagen</span>}
         </div>

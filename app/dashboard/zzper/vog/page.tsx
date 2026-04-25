@@ -21,6 +21,7 @@ export default function VogPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [detectedExpiry, setDetectedExpiry] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,6 +65,7 @@ export default function VogPage() {
         setUploadError(data.error ?? "Upload mislukt");
       } else {
         setSelectedFile(null);
+        if (data.vogExpiresAt) setDetectedExpiry(data.vogExpiresAt);
         await fetchVog();
       }
     } catch {
@@ -112,12 +114,19 @@ export default function VogPage() {
           <span className="text-sm font-medium" style={{ color: "#6B7280" }}>Nog geen VOG geüpload</span>
         </div>
       ) : vog.vogStatus === "PENDING" ? (
-        <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
+        <div className="rounded-2xl px-5 py-4 space-y-1"
           style={{ background: "#FFF7ED", border: "0.5px solid #FED7AA" }}>
-          <span className="text-xl">⏳</span>
-          <span className="text-sm font-medium" style={{ color: "#92400E" }}>
-            VOG in behandeling — we controleren je document binnen 1 werkdag
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xl">⏳</span>
+            <span className="text-sm font-medium" style={{ color: "#92400E" }}>
+              VOG in behandeling — we controleren je document binnen 1 werkdag
+            </span>
+          </div>
+          {(detectedExpiry || vog.vogExpiresAt) && (
+            <p className="text-xs pl-9" style={{ color: "#92400E" }}>
+              Automatisch herkende vervaldatum: <strong>{formatDate(detectedExpiry ?? vog.vogExpiresAt)}</strong>
+            </p>
+          )}
         </div>
       ) : vog.vogStatus === "VERIFIED" ? (
         <div className="rounded-2xl px-5 py-4 space-y-1"

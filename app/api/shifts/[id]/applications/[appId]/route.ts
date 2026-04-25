@@ -46,6 +46,15 @@ export async function PATCH(
     });
     const dateStr = new Date(shift.startTime).toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" });
     emails.applicationAccepted(app.user.email!, shift.title, dateStr).catch(() => {});
+    await prisma.notification.create({
+      data: {
+        userId: app.userId,
+        type:   "SHIFT_ACCEPTED",
+        title:  "Je aanmelding is geaccepteerd!",
+        body:   `Je bent geaccepteerd voor "${shift.title}" op ${new Date(shift.startTime).toLocaleDateString("nl-NL")}.`,
+        href:   `/dashboard/zzper/timesheets`,
+      },
+    });
     dispatchWebhook(employer.id, "shift.filled", {
       shiftId: params.id,
       applicationId: params.appId,

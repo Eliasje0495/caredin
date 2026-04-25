@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { VerifyStatus } from "@prisma/client";
+import { verifyBigNumber } from "@/lib/big";
+import { verifySkjNumber } from "@/lib/skj";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +18,9 @@ export async function PATCH(req: NextRequest) {
   const role = (session!.user as any).role as string;
 
   if (role === "WORKER") {
-    const workerData = buildWorkerData(step, data);
+    const workerData = step === 3
+      ? await buildWorkerDataStep3(data)
+      : buildWorkerData(step, data);
     if (step === 1 && data.phone) {
       await prisma.user.update({ where: { id: userId }, data: { phone: data.phone } });
     }
@@ -25,6 +29,11 @@ export async function PATCH(req: NextRequest) {
       create: { userId, ...workerData },
       update: workerData,
     });
+    if (step === 3) {
+      const verified = (workerData as any).bigStatus === VerifyStatus.VERIFIED
+        || (workerData as any).skjStatus === VerifyStatus.VERIFIED;
+      return NextResponse.json({ ok: true, verified, bigStatus: (workerData as any).bigStatus, skjStatus: (workerData as any).skjStatus });
+    }
   } else if (role === "EMPLOYER") {
     await prisma.employer.update({
       where: { userId },
@@ -33,6 +42,31 @@ export async function PATCH(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+async function buildWorkerDataStep3(data: any) {
+  const [bigResult, skjResult] = await Promise.all([
+    data.bigNumber ? verifyBigNumber(data.bigNumber) : Promise.resolve(null),
+    data.skjNumber ? verifySkjNumber(data.skjNumber) : Promise.resolve(null),
+  ]);
+
+  return {
+    bigNumber:    data.bigNumber    || undefined,
+    bigStatus:    bigResult
+      ? (bigResult.valid ? VerifyStatus.VERIFIED : VerifyStatus.UNVERIFIED)
+      : undefined,
+    skjNumber:    data.skjNumber    || undefined,
+    skjStatus:    skjResult
+      ? (skjResult.valid ? VerifyStatus.VERIFIED : VerifyStatus.UNVERIFIED)
+      : undefined,
+    kabizNumber:  data.kabizNumber  || undefined,
+    kabizStatus:  data.kabizNumber  ? VerifyStatus.PENDING : undefined,
+    agbCode:      data.agbCode      || undefined,
+    crkboNumber:   data.crkboNumber   || undefined,
+    nvpaNipNumber: data.nvpaNipNumber  || undefined,
+    diplomaNumber: data.diplomaNumber  || undefined,
+    diplomaStatus: data.diplomaNumber  ? VerifyStatus.PENDING : undefined,
+  };
 }
 
 function buildWorkerData(step: number, data: any) {
@@ -45,19 +79,6 @@ function buildWorkerData(step: number, data: any) {
     primaryFunction: data.primaryFunction || undefined,
   };
   if (step === 2) return {}; // file upload — handled separately
-  if (step === 3) return {
-    bigNumber:    data.bigNumber    || undefined,
-    bigStatus:    data.bigNumber    ? VerifyStatus.PENDING : undefined,
-    skjNumber:    data.skjNumber    || undefined,
-    skjStatus:    data.skjNumber    ? VerifyStatus.PENDING : undefined,
-    kabizNumber:  data.kabizNumber  || undefined,
-    kabizStatus:  data.kabizNumber  ? VerifyStatus.PENDING : undefined,
-    agbCode:      data.agbCode      || undefined,
-    crkboNumber:   data.crkboNumber   || undefined,
-    nvpaNipNumber: data.nvpaNipNumber  || undefined,
-    diplomaNumber: data.diplomaNumber  || undefined,
-    diplomaStatus: data.diplomaNumber  ? VerifyStatus.PENDING : undefined,
-  };
   if (step === 4) return {
     contractType:   data.contractType || "ZZP",
     kvkNumber:      data.kvkNumber     || undefined,

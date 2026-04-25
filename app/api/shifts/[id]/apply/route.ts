@@ -47,7 +47,7 @@ export async function POST(
   const existing = await prisma.shiftApplication.findUnique({
     where: { shiftId_userId: { shiftId, userId } },
   });
-  if (existing)
+  if (existing && existing.status !== "WITHDRAWN")
     return NextResponse.json(
       { error: "Je hebt je al aangemeld voor deze dienst." },
       { status: 409 }
@@ -56,10 +56,18 @@ export async function POST(
   const origin = req.headers.get("origin") ?? process.env.NEXTAUTH_URL ?? "https://caredin.nl";
   const overeenkomstUrl = `${origin}/api/shifts/${shiftId}/overeenkomst`;
 
-  // Create application
-  const application = await prisma.shiftApplication.create({
-    data: { shiftId, userId, status: "PENDING", overeenkomstUrl },
-  });
+  // Heraanmelden na intrekking — update bestaand record
+  let application;
+  if (existing?.status === "WITHDRAWN") {
+    application = await prisma.shiftApplication.update({
+      where: { id: existing.id },
+      data: { status: "PENDING", overeenkomstUrl, appliedAt: new Date() },
+    });
+  } else {
+    application = await prisma.shiftApplication.create({
+      data: { shiftId, userId, status: "PENDING", overeenkomstUrl },
+    });
+  }
 
   // Dispatch webhook
   dispatchWebhook(shift.employerId, "shift.applied", {
@@ -72,7 +80,7 @@ export async function POST(
   // Notify employer
   const employer = await prisma.employer.findUnique({
     where: { id: shift.employerId },
-    include: { user: { select: { email: true } } },
+    include: { user: { select: { id: true, email: true } } },
   });
   if (employer?.user?.email) {
     emails.applicationReceived(
@@ -80,6 +88,18 @@ export async function POST(
       session.user?.name ?? "Een professional",
       shift.title
     ).catch(() => {});
+  }
+  if (employer?.user?.id) {
+    const workerName = session.user?.name ?? "Een professional";
+    await prisma.notification.create({
+      data: {
+        userId: employer.user.id,
+        type:   "NEW_APPLICATION",
+        title:  `Nieuwe aanmelding voor "${shift.title}"`,
+        body:   `${workerName} heeft zich aangemeld.`,
+        href:   `/dashboard/organisatie/diensten/${shift.id}`,
+      },
+    });
   }
 
   // Send overeenkomst to worker

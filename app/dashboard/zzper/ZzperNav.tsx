@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import NotificationBell from "@/components/NotificationBell";
 
 const NAV_GROUPS = [
   {
@@ -12,6 +13,8 @@ const NAV_GROUPS = [
       { icon: "🪪", label: "VOG document",               href: "/dashboard/zzper/vog" },
       { icon: "💼", label: "Flexpools",                   href: "/dashboard/zzper/flexpools" },
       { icon: "💶", label: "Financieel overzicht",        href: "/dashboard/zzper/financieel" },
+      { icon: "🧾", label: "Zorgdeclaraties",             href: "/dashboard/zzper/declaraties" },
+      { icon: "💬", label: "Berichten",                   href: "/dashboard/zzper/berichten" },
       { icon: "🛡️", label: "Mijn verzekeringen & pensioen", href: "/dashboard/zzper/verzekeringen" },
       { icon: "🔔", label: "Notificaties",                href: "/dashboard/zzper/notificaties" },
     ],
@@ -19,7 +22,7 @@ const NAV_GROUPS = [
   {
     heading: "Meer van CaredIn",
     items: [
-      { icon: "💬", label: "Geef feedback",      href: "/feedback" },
+      { icon: "💬", label: "Geef feedback",      href: "/dashboard/zzper/feedback" },
       { icon: "❓", label: "Helpdesk",            href: "/helpdesk" },
       { icon: "👥", label: "Community",           href: "/community" },
       { icon: "🎁", label: "Vrienden uitnodigen", href: "/dashboard/zzper/uitnodigen" },
@@ -61,12 +64,13 @@ export function ZzperNav({ userName, userInitial, pendingCount }: Props) {
             style={{ background: "var(--teal)" }}>
             {userInitial}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="text-[13px] font-semibold truncate" style={{ color: "var(--dark)" }}>{userName}</div>
             <Link href="/dashboard/zzper" className="text-[11px] no-underline" style={{ color: "var(--teal)" }}>
               Dashboard →
             </Link>
           </div>
+          <NotificationBell />
         </div>
       </div>
 

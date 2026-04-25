@@ -69,9 +69,14 @@ export default async function ShiftDetailPage({ params }: { params: { id: string
   return (
     <div>
       <main className="max-w-4xl mx-auto px-8 py-10">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Link href="/dashboard/organisatie/diensten" className="text-sm font-medium no-underline" style={{ color: "var(--muted)" }}>
             ← Terug naar diensten
+          </Link>
+          <Link href={`/dashboard/organisatie/professionals?shiftId=${shift.id}`}
+            className="px-4 py-2 rounded-[40px] text-sm font-semibold no-underline"
+            style={{ background: "var(--teal-light)", color: "var(--teal)", border: "1px solid var(--teal)" }}>
+            ✉ Professionals uitnodigen
           </Link>
         </div>
 

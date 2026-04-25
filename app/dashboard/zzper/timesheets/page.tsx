@@ -67,11 +67,18 @@ export default async function TimesheetsPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-8 py-10">
-        <div className="mb-8">
-          <h1 className="text-[28px] font-bold mb-1" style={{ fontFamily: "var(--font-fraunces)", color: "var(--dark)" }}>
-            Mijn diensten
-          </h1>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>Beheer je aanmeldingen, check in/uit en volg je uren.</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-[28px] font-bold mb-1" style={{ fontFamily: "var(--font-fraunces)", color: "var(--dark)" }}>
+              Mijn diensten
+            </h1>
+            <p className="text-sm" style={{ color: "var(--muted)" }}>Beheer je aanmeldingen, check in/uit en volg je uren.</p>
+          </div>
+          <a href="/api/ical" download="caredin-diensten.ics"
+            className="px-4 py-2 rounded-[40px] text-sm font-semibold no-underline flex-shrink-0"
+            style={{ background: "var(--teal-light)", color: "var(--teal)", border: "1px solid var(--teal)" }}>
+            📅 Exporteer kalender
+          </a>
         </div>
 
         {applications.length === 0 && (
@@ -94,7 +101,10 @@ export default async function TimesheetsPage() {
           {active.length > 0 && (
             <Group label="Nu actief" color="#1E40AF">
               {active.map(app => (
-                <ShiftRow key={app.id} app={app as any} showCheckinOut />
+                <ShiftRow key={app.id} app={app as any} showCheckinOut
+                  employerUserId={(app.shift as any).employer?.user?.id}
+                  hourlyRate={Number(app.shift.hourlyRate)}
+                />
               ))}
             </Group>
           )}
@@ -151,7 +161,10 @@ function Group({ label, color, children }: { label: string; color: string; child
   );
 }
 
-function ShiftRow({ app, showCheckinOut, showEarnings }: { app: any; showCheckinOut?: boolean; showEarnings?: boolean }) {
+function ShiftRow({ app, showCheckinOut, showEarnings, employerUserId, hourlyRate }: {
+  app: any; showCheckinOut?: boolean; showEarnings?: boolean;
+  employerUserId?: string; hourlyRate?: number;
+}) {
   const shift = app.shift;
   const start = new Date(shift.startTime);
   const end   = new Date(shift.endTime);
@@ -204,6 +217,11 @@ function ShiftRow({ app, showCheckinOut, showEarnings }: { app: any; showCheckin
           {showCheckinOut && (
             <CheckInOutButtons
               shiftId={shift.id}
+              shiftTitle={shift.title}
+              employerName={shift.employer.companyName}
+              employerUserId={employerUserId}
+              hourlyRate={hourlyRate ?? Number(shift.hourlyRate)}
+              checkedInAt={app.checkedInAt ? new Date(app.checkedInAt).toISOString() : null}
               checkedIn={!!app.checkedInAt}
               checkedOut={!!app.checkedOutAt}
             />

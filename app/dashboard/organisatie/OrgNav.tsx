@@ -5,11 +5,14 @@ import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
 
 const PRIMARY = [
-  { href: "/dashboard/organisatie",            label: "Planning" },
-  { href: "/dashboard/organisatie/diensten",   label: "Diensten" },
-  { href: "/dashboard/organisatie/checkouts",  label: "Checkouts" },
-  { href: "/dashboard/organisatie/flexpools",  label: "Flexpools" },
-  { href: "/dashboard/organisatie/facturen",   label: "Facturen" },
+  { href: "/dashboard/organisatie",                  label: "Planning" },
+  { href: "/dashboard/organisatie/diensten",         label: "Diensten" },
+  { href: "/dashboard/organisatie/checkouts",        label: "Checkouts" },
+  { href: "/dashboard/organisatie/flexpools",        label: "Flexpools" },
+  { href: "/dashboard/organisatie/professionals",    label: "Professionals" },
+  { href: "/dashboard/organisatie/facturen",         label: "Facturen" },
+  { href: "/dashboard/organisatie/declaraties",      label: "Declaraties" },
+  { href: "/dashboard/organisatie/berichten",        label: "Berichten" },
 ];
 
 interface Props {

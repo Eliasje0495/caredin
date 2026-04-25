@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { AanmeldingenTabs } from "./AanmeldingenTabs";
+import { calcMatchScore, matchLabel } from "@/lib/match-score";
 
 export default async function ZzperDashboard() {
   const session = await getServerSession(authOptions);
@@ -14,8 +15,9 @@ export default async function ZzperDashboard() {
 
   const now = new Date();
 
-  const [profile, applications, upcomingShifts] = await Promise.all([
-    prisma.workerProfile.findUnique({ where: { userId } }),
+  const profile = await prisma.workerProfile.findUnique({ where: { userId } });
+
+  const [applications, upcomingShifts, suggestedShifts, dashUser] = await Promise.all([
     prisma.shiftApplication.findMany({
       where: { userId },
       include: { shift: { include: { employer: { select: { companyName: true } } } } },
@@ -28,6 +30,17 @@ export default async function ZzperDashboard() {
       orderBy: { shift: { startTime: "asc" } },
       take: 5,
     }),
+    prisma.shift.findMany({
+      where: {
+        status: "OPEN",
+        ...(profile?.primaryFunction ? { function: profile.primaryFunction as any } : {}),
+        ...(profile?.city ? { city: profile.city } : {}),
+      },
+      include: { employer: { select: { companyName: true } } },
+      orderBy: [{ isUrgent: "desc" }, { startTime: "asc" }],
+      take: 4,
+    }),
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true, phone: true, image: true } }),
   ]);
 
   const hour = now.getHours();
@@ -63,6 +76,37 @@ export default async function ZzperDashboard() {
           </h1>
           <p className="text-sm" style={{ color: "var(--muted)" }}>Hier is een overzicht van je activiteiten.</p>
         </div>
+
+        {/* Profile completion */}
+        {(() => {
+          const fields = [
+            dashUser?.name, dashUser?.phone,
+            dashUser?.image, profile?.bio,
+            profile?.dateOfBirth, profile?.address, profile?.city,
+            profile?.postalCode, profile?.bigNumber, profile?.kvkNumber,
+            profile?.hourlyRate ? String(profile.hourlyRate) : null, profile?.radius,
+          ];
+          const filled = fields.filter(f => f !== null && f !== "" && f !== undefined).length;
+          const pct = Math.round((filled / fields.length) * 100);
+          if (pct >= 80) return null;
+          return (
+            <div className="rounded-2xl p-5 mb-6 bg-white" style={{ border: "0.5px solid var(--border)" }}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm font-semibold" style={{ color: "var(--dark)" }}>Profiel voltooiing</div>
+                <Link href="/dashboard/zzper/profiel" className="text-xs font-semibold no-underline" style={{ color: "var(--teal)" }}>Aanvullen →</Link>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "var(--teal-light)" }}>
+                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: pct >= 60 ? "var(--teal)" : "#F59E0B" }} />
+                </div>
+                <span className="text-sm font-bold flex-shrink-0" style={{ color: pct >= 60 ? "var(--teal)" : "#92400E" }}>{pct}%</span>
+              </div>
+              <p className="text-xs mt-1.5" style={{ color: "var(--muted)" }}>
+                Een volledig profiel vergroot je kans op geaccepteerd worden bij diensten.
+              </p>
+            </div>
+          );
+        })()}
 
         {/* Verification warning */}
         {!isVerified && (
@@ -162,6 +206,69 @@ export default async function ZzperDashboard() {
                     </div>
                     <div className="text-sm font-bold flex-shrink-0" style={{ color: "var(--teal)" }}>
                       €{Number(shift.hourlyRate).toFixed(0)}/u
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Passende diensten */}
+        {suggestedShifts.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[11px] font-bold uppercase tracking-[1.2px]" style={{ color: "var(--teal)" }}>
+                Passende diensten ({suggestedShifts.length})
+              </div>
+              <Link href="/diensten" className="text-xs no-underline font-semibold" style={{ color: "var(--teal)" }}>
+                Alle diensten →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {(suggestedShifts as any[]).map((shift) => {
+                const start = new Date(shift.startTime);
+                const end   = new Date(shift.endTime);
+                const hours = (end.getTime() - start.getTime()) / 3600000 - (shift.breakMinutes ?? 30) / 60;
+                const earn  = (hours * Number(shift.hourlyRate)).toFixed(0);
+                return (
+                  <Link key={shift.id} href={`/diensten/${shift.id}`}
+                    className="no-underline rounded-2xl px-5 py-4 bg-white group"
+                    style={{ border: "0.5px solid var(--border)" }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--teal-light)", color: "var(--teal)" }}>
+                        {shift.isUrgent ? "Urgent" : "Open"}
+                      </span>
+                      <span className="text-sm font-bold" style={{ color: "var(--teal)" }}>~€{earn}</span>
+                    </div>
+                    {(() => {
+                      const s = calcMatchScore({
+                        workerFunction: profile?.primaryFunction ?? null,
+                        workerCity: profile?.city ?? null,
+                        isVerified: profile?.isVerified ?? false,
+                        workerBig: profile?.bigStatus ?? undefined,
+                        workerKvk: profile?.kvkStatus ?? undefined,
+                        shiftFunction: shift.function,
+                        shiftCity: shift.city,
+                        requiresBig: shift.requiresBig,
+                        requiresKvk: shift.requiresKvk,
+                      });
+                      const m = matchLabel(s);
+                      return (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: m.bg, color: m.color }}>
+                          {s}% · {m.label}
+                        </span>
+                      );
+                    })()}
+                    <div className="text-sm font-bold mb-0.5" style={{ color: "var(--dark)" }}>{shift.title}</div>
+                    <div className="text-xs" style={{ color: "var(--muted)" }}>
+                      {shift.employer.companyName} · {shift.city}
+                    </div>
+                    <div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+                      {start.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" })}{" "}
+                      {start.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}–
+                      {end.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </Link>
                 );

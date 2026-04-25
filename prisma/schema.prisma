@@ -34,6 +34,13 @@ model User {
   reviews       Review[]          @relation("ReviewedUser")
   givenReviews  Review[]          @relation("ReviewerUser")
   pushSubscriptions PushSubscription[]
+  declaraties       Declaratie[]
+  notifications     Notification[]
+  referralCode    String?   @unique  // bijv. "ANNA-X7K2"
+  referredById    String?
+  referredBy      User?     @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals       User[]    @relation("UserReferrals")
+  referralRewards ReferralReward[]
 
   @@index([email])
   @@map("users")
@@ -71,6 +78,7 @@ model WorkerProfile {
   skjNumber     String?
   skjStatus     VerifyStatus @default(UNVERIFIED)
   skjVerifiedAt DateTime?
+  skjExpiresAt  DateTime?    // Verloopdatum vanuit SKJ-register
 
   // KABIZ verificatie
   kabizNumber     String?
@@ -223,14 +231,19 @@ model Employer {
   isVerified    Boolean  @default(false)
   isActive      Boolean  @default(true)
 
+  notificationSettings Json?  // { new_application, checkout_pending, auto_approved, shift_reminder, no_applicants, platform_updates }
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  shifts        Shift[]
-  vacancies     Vacancy[]
-  apiKeys       ApiKey[]
-  webhooks      WebhookEndpoint[]
-  locations     Location[]
+  shifts          Shift[]
+  vacancies       Vacancy[]
+  apiKeys         ApiKey[]
+  webhooks        WebhookEndpoint[]
+  locations       Location[]
+  blockedWorkers  BlockedWorker[]
+  declaraties     Declaratie[]
+  shiftTemplates  ShiftTemplate[]
 
   @@map("employers")
 }
@@ -579,6 +592,83 @@ model Location {
 }
 
 // ─────────────────────────────────────────────
+// ZORGDECLARATIES
+// ─────────────────────────────────────────────
+model Declaratie {
+  id         String   @id @default(cuid())
+  nummer     String   @unique  // bijv. "DEC-2026-0001"
+
+  // Van ZZP'er
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Aan opdrachtgever
+  employerId String
+  employer   Employer @relation(fields: [employerId], references: [id], onDelete: Cascade)
+
+  periodeStart DateTime
+  periodeEinde  DateTime
+
+  regels     DeclaratieRegel[]
+
+  totaalBedrag  Decimal  @db.Decimal(10,2)
+
+  status        DeclaratieStatus @default(CONCEPT)
+  notitie       String?   @db.Text   // notitie van ZZP'er
+  afwijzingReden String?  @db.Text   // bij AFGEWEZEN
+
+  ingediendAt    DateTime?
+  goedgekeurdAt  DateTime?
+  betaaldAt      DateTime?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([employerId])
+  @@map("declaraties")
+}
+
+model DeclaratieRegel {
+  id            String     @id @default(cuid())
+  declaratieId  String
+  declaratie    Declaratie @relation(fields: [declaratieId], references: [id], onDelete: Cascade)
+
+  omschrijving  String
+  datum         DateTime
+  uren          Decimal    @db.Decimal(5,2)
+  tarief        Decimal    @db.Decimal(8,2)
+  bedrag        Decimal    @db.Decimal(10,2)  // uren × tarief
+
+  @@map("declaratie_regels")
+}
+
+enum DeclaratieStatus {
+  CONCEPT
+  INGEDIEND
+  GOEDGEKEURD
+  AFGEWEZEN
+  BETAALD
+}
+
+// ─────────────────────────────────────────────
+// BLOCKED WORKERS
+// ─────────────────────────────────────────────
+model BlockedWorker {
+  id         String   @id @default(cuid())
+  employerId String
+  employer   Employer @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  workerId   String
+  workerName String   // snapshot van naam op moment van blokkeren
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  @@unique([employerId, workerId])
+  @@index([employerId])
+  @@map("blocked_workers")
+}
+
+// ─────────────────────────────────────────────
 // PUSH SUBSCRIPTIONS (web push notificaties)
 // ─────────────────────────────────────────────
 model PushSubscription {
@@ -593,4 +683,103 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   @@map("push_subscriptions")
+}
+
+// ─────────────────────────────────────────────
+// SHIFT TEMPLATES (werkgever kan templates opslaan)
+// ─────────────────────────────────────────────
+model ShiftTemplate {
+  id         String   @id @default(cuid())
+  employerId String
+  employer   Employer @relation(fields: [employerId], references: [id], onDelete: Cascade)
+
+  name        String          // bijv. "Nacht verpleegkundige"
+  title       String
+  description String?  @db.Text
+  sector      Sector
+  function    ZorgFunction
+  address     String
+  city        String
+  postalCode  String
+  breakMinutes Int     @default(30)
+  hourlyRate  Decimal  @db.Decimal(8,2)
+  requiresBig  Boolean @default(false)
+  requiresSkj  Boolean @default(false)
+  requiresKvk  Boolean @default(true)
+
+  createdAt  DateTime @default(now())
+
+  @@index([employerId])
+  @@map("shift_templates")
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICATIONS (in-app notificatiebell)
+// ─────────────────────────────────────────────
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String   // "NEW_APPLICATION" | "SHIFT_ACCEPTED" | "CHECKOUT_PENDING" | "SHIFT_REMINDER" | etc
+  title     String
+  body      String
+  href      String?  // link bij klik
+
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────
+// DIRECT MESSAGES (berichten tussen instelling en professional)
+// ─────────────────────────────────────────────
+model DirectConversation {
+  id         String   @id @default(cuid())
+  workerId   String   // userId of the worker
+  employerId String   // userId of the employer contact
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  messages   DirectMessage[]
+
+  @@unique([workerId, employerId])
+  @@index([workerId])
+  @@index([employerId])
+  @@map("direct_conversations")
+}
+
+model DirectMessage {
+  id             String              @id @default(cuid())
+  conversationId String
+  conversation   DirectConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId       String
+  senderRole     String              // "WORKER" | "EMPLOYER"
+  content        String              @db.Text
+  read           Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+
+  @@index([conversationId])
+  @@map("direct_messages")
+}
+
+// ─────────────────────────────────────────────
+// REFERRAL
+// ─────────────────────────────────────────────
+model ReferralReward {
+  id          String   @id @default(cuid())
+  referrerId  String
+  referrer    User     @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  referredId  String   @unique
+  bonusAmount Decimal  @default(25.00) @db.Decimal(8,2)
+  paidOut     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([referrerId])
+  @@map("referral_rewards")
 }

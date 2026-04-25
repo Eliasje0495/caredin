@@ -7,146 +7,151 @@ import { prisma } from "@/lib/prisma";
 export default async function StatistiekenPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/inloggen");
-
-  const userId = (session.user as any).id as string;
+  const userId = (session.user as any).id;
   const employer = await prisma.employer.findUnique({ where: { userId } });
   if (!employer) redirect("/dashboard/onboarding");
 
-  const allApps = await prisma.shiftApplication.findMany({
-    where: { status: "APPROVED", shift: { employerId: employer.id } },
-    include: { shift: { select: { function: true, sector: true, startTime: true, hourlyRate: true } } },
+  const now = new Date();
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+  const [
+    totalShifts, openShifts, filledShifts, totalApps, pendingApps,
+    approvedApps, recentShifts, topWorkers,
+  ] = await Promise.all([
+    prisma.shift.count({ where: { employerId: employer.id } }),
+    prisma.shift.count({ where: { employerId: employer.id, status: "OPEN" } }),
+    prisma.shift.count({ where: { employerId: employer.id, status: { in: ["FILLED","IN_PROGRESS","COMPLETED","APPROVED"] } } }),
+    prisma.shiftApplication.count({ where: { shift: { employerId: employer.id } } }),
+    prisma.shiftApplication.count({ where: { status: "PENDING", shift: { employerId: employer.id } } }),
+    prisma.shiftApplication.findMany({
+      where: { status: "APPROVED", shift: { employerId: employer.id }, paidAt: { gte: sixMonthsAgo } },
+      select: { paidAt: true, hoursWorked: true, payoutAmount: true, platformFee: true },
+    }),
+    prisma.shift.findMany({
+      where: { employerId: employer.id, createdAt: { gte: sixMonthsAgo } },
+      select: { createdAt: true, status: true },
+    }),
+    prisma.shiftApplication.findMany({
+      where: { status: "APPROVED", shift: { employerId: employer.id } },
+      include: { user: { select: { name: true } } },
+      orderBy: { hoursWorked: "desc" },
+      take: 5,
+    }),
+  ]);
+
+  // Monthly stats
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    return d.toLocaleDateString("nl-NL", { month: "short", year: "2-digit" });
   });
 
-  const totalShifts   = await prisma.shift.count({ where: { employerId: employer.id } });
-  const openShifts    = await prisma.shift.count({ where: { employerId: employer.id, status: "OPEN" } });
-  const filledShifts  = await prisma.shift.count({ where: { employerId: employer.id, status: { in: ["FILLED","IN_PROGRESS","COMPLETED","APPROVED"] } } });
-  const totalHours    = allApps.reduce((s, a) => s + Number(a.hoursWorked ?? 0), 0);
-  const totalSpend    = allApps.reduce((s, a) => s + Number(a.payoutAmount ?? 0) + Number(a.platformFee ?? 0), 0);
-  const totalWorkers  = new Set(allApps.map(a => a.userId)).size;
-
-  // Per function breakdown
-  const byFunction: Record<string, { shifts: number; hours: number; spend: number }> = {};
-  for (const a of allApps) {
-    const fn = a.shift.function;
-    if (!byFunction[fn]) byFunction[fn] = { shifts: 0, hours: 0, spend: 0 };
-    byFunction[fn].shifts++;
-    byFunction[fn].hours += Number(a.hoursWorked ?? 0);
-    byFunction[fn].spend += Number(a.payoutAmount ?? 0) + Number(a.platformFee ?? 0);
+  const monthlyHours: Record<string, number> = {};
+  const monthlyCost:  Record<string, number> = {};
+  for (const app of approvedApps) {
+    if (!app.paidAt) continue;
+    const key = new Date(app.paidAt).toLocaleDateString("nl-NL", { month: "short", year: "2-digit" });
+    monthlyHours[key] = (monthlyHours[key] ?? 0) + Number(app.hoursWorked ?? 0);
+    monthlyCost[key]  = (monthlyCost[key]  ?? 0) + Number(app.payoutAmount ?? 0) + Number(app.platformFee ?? 0);
   }
 
-  // Monthly breakdown (last 6 months)
-  const months: { label: string; shifts: number; hours: number; spend: number }[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    const label = d.toLocaleDateString("nl-NL", { month: "short", year: "2-digit" });
-    const mApps = allApps.filter(a => {
-      const t = new Date(a.shift.startTime);
-      return t.getMonth() === d.getMonth() && t.getFullYear() === d.getFullYear();
-    });
-    months.push({
-      label,
-      shifts: mApps.length,
-      hours: mApps.reduce((s, a) => s + Number(a.hoursWorked ?? 0), 0),
-      spend: mApps.reduce((s, a) => s + Number(a.payoutAmount ?? 0) + Number(a.platformFee ?? 0), 0),
-    });
-  }
-
-  const FUNCTION_LABELS: Record<string, string> = {
-    VERPLEEGKUNDIGE: "Verpleegkundige", VERZORGENDE_IG: "Verzorgende IG",
-    HELPENDE_PLUS: "Helpende Plus", HELPENDE: "Helpende",
-    ZORGASSISTENT: "Zorgassistent", GGZ_AGOOG: "GGZ Agoog",
-    PERSOONLIJK_BEGELEIDER: "Persoonlijk Begeleider", ARTS: "Arts",
-    FYSIOTHERAPEUT: "Fysiotherapeut", OVERIG: "Overig",
-  };
+  const totalHours   = approvedApps.reduce((s, a) => s + Number(a.hoursWorked ?? 0), 0);
+  const totalCost    = approvedApps.reduce((s, a) => s + Number(a.payoutAmount ?? 0) + Number(a.platformFee ?? 0), 0);
+  const fillRate     = totalShifts > 0 ? Math.round((filledShifts / totalShifts) * 100) : 0;
+  const maxHours     = Math.max(...months.map(m => monthlyHours[m] ?? 0), 1);
 
   return (
     <div>
-      <main className="max-w-5xl mx-auto px-8 py-10">
-        <div className="mb-8">
-          <h1 className="text-[28px] font-bold mb-1" style={{ fontFamily: "var(--font-fraunces)", color: "var(--dark)" }}>
-            Statistieken
-          </h1>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>Overzicht van jouw gebruik van het platform.</p>
-        </div>
+      <main className="max-w-4xl mx-auto px-8 py-10">
+        <h1 className="text-[28px] font-bold mb-1" style={{ fontFamily: "var(--font-fraunces)", color: "var(--dark)" }}>
+          Statistieken
+        </h1>
+        <p className="text-sm mb-8" style={{ color: "var(--muted)" }}>Inzicht in je personeelsinzet en kosten.</p>
 
-        {/* Top stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        {/* KPI cards */}
+        <div className="grid grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Totale diensten",   value: totalShifts },
-            { label: "Open / Ingevuld",   value: `${openShifts} / ${filledShifts}` },
-            { label: "Unieke professionals", value: totalWorkers },
-            { label: "Uren ingezet",      value: `${totalHours.toFixed(0)} uur` },
+            { label: "Diensten geplaatst",    value: totalShifts,               suffix: "" },
+            { label: "Bezettingsgraad",       value: `${fillRate}%`,            suffix: "" },
+            { label: "Totaal uren ingehuurd", value: totalHours.toFixed(0),     suffix: " uur" },
+            { label: "Totale kosten",         value: `€${totalCost.toFixed(0)}`, suffix: "" },
           ].map(s => (
             <div key={s.label} className="rounded-2xl p-5 bg-white" style={{ border: "0.5px solid var(--border)" }}>
-              <div className="text-[26px] font-bold leading-none mb-1" style={{ fontFamily: "var(--font-fraunces)", color: "var(--teal)" }}>{s.value}</div>
-              <div className="text-xs font-medium" style={{ color: "var(--muted)" }}>{s.label}</div>
+              <div className="text-[26px] font-bold mb-1" style={{ fontFamily: "var(--font-fraunces)", color: "var(--teal)" }}>
+                {s.value}{s.suffix}
+              </div>
+              <div className="text-xs" style={{ color: "var(--muted)" }}>{s.label}</div>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          {/* Monthly bar chart (CSS only) */}
-          <div className="rounded-2xl p-6 bg-white" style={{ border: "0.5px solid var(--border)" }}>
-            <div className="text-[11px] font-bold uppercase tracking-[1px] mb-4" style={{ color: "var(--teal)" }}>Diensten per maand</div>
-            <div className="flex items-end gap-2 h-32">
-              {months.map(m => {
-                const max = Math.max(...months.map(x => x.shifts), 1);
-                const pct = (m.shifts / max) * 100;
-                return (
-                  <div key={m.label} className="flex-1 flex flex-col items-center gap-1">
-                    <div className="text-[9px] font-semibold" style={{ color: "var(--teal)" }}>{m.shifts || ""}</div>
-                    <div className="w-full rounded-t-md transition-all" style={{ height: `${Math.max(pct, 4)}%`, background: "var(--teal)", opacity: 0.8 }} />
-                    <div className="text-[9px]" style={{ color: "var(--muted)" }}>{m.label}</div>
+        {/* Monthly hours chart */}
+        <div className="rounded-2xl bg-white p-6 mb-6" style={{ border: "0.5px solid var(--border)" }}>
+          <div className="text-sm font-semibold mb-4" style={{ color: "var(--dark)" }}>Ingehuurde uren per maand</div>
+          <div className="flex items-end gap-3 h-28">
+            {months.map(m => {
+              const h = monthlyHours[m] ?? 0;
+              return (
+                <div key={m} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="text-[10px] font-semibold" style={{ color: "var(--teal)" }}>
+                    {h > 0 ? `${h.toFixed(0)}u` : ""}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Spend per month */}
-          <div className="rounded-2xl p-6 bg-white" style={{ border: "0.5px solid var(--border)" }}>
-            <div className="text-[11px] font-bold uppercase tracking-[1px] mb-4" style={{ color: "var(--teal)" }}>Kosten per maand</div>
-            <div className="flex items-end gap-2 h-32">
-              {months.map(m => {
-                const max = Math.max(...months.map(x => x.spend), 1);
-                const pct = (m.spend / max) * 100;
-                return (
-                  <div key={m.label} className="flex-1 flex flex-col items-center gap-1">
-                    <div className="text-[9px] font-semibold" style={{ color: "#1E40AF" }}>{m.spend > 0 ? `€${m.spend.toFixed(0)}` : ""}</div>
-                    <div className="w-full rounded-t-md" style={{ height: `${Math.max(pct, 4)}%`, background: "#3B82F6", opacity: 0.7 }} />
-                    <div className="text-[9px]" style={{ color: "var(--muted)" }}>{m.label}</div>
-                  </div>
-                );
-              })}
-            </div>
+                  <div className="w-full rounded-t-lg"
+                    style={{ height: `${Math.max((h / maxHours) * 88, h > 0 ? 4 : 2)}px`, background: h > 0 ? "var(--teal)" : "var(--teal-light)", minHeight: "2px" }} />
+                  <div className="text-[10px]" style={{ color: "var(--muted)" }}>{m}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* By function */}
-        {Object.keys(byFunction).length > 0 && (
-          <div className="mt-6 rounded-2xl bg-white overflow-hidden" style={{ border: "0.5px solid var(--border)" }}>
-            <div className="px-6 py-4" style={{ borderBottom: "0.5px solid var(--border)" }}>
-              <div className="text-[11px] font-bold uppercase tracking-[1px]" style={{ color: "var(--teal)" }}>Per functie</div>
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          {/* Status breakdown */}
+          <div className="rounded-2xl bg-white p-6" style={{ border: "0.5px solid var(--border)" }}>
+            <div className="text-sm font-semibold mb-4" style={{ color: "var(--dark)" }}>Dienst status</div>
+            <div className="space-y-3">
+              {[
+                { label: "Open",      value: openShifts,    color: "#065F46" },
+                { label: "Bezet",     value: filledShifts,  color: "var(--teal)" },
+                { label: "Aanmeldingen in behandeling", value: pendingApps, color: "#92400E" },
+              ].map(s => (
+                <div key={s.label}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span style={{ color: "var(--muted)" }}>{s.label}</span>
+                    <span className="font-bold" style={{ color: s.color }}>{s.value}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full" style={{ background: "var(--teal-light)" }}>
+                    <div className="h-full rounded-full" style={{ width: `${totalShifts > 0 ? Math.min(100, (s.value / totalShifts) * 100) : 0}%`, background: s.color }} />
+                  </div>
+                </div>
+              ))}
             </div>
-            {Object.entries(byFunction).sort((a, b) => b[1].shifts - a[1].shifts).map(([fn, data]) => (
-              <div key={fn} className="grid items-center px-6 py-3" style={{ gridTemplateColumns: "1fr 80px 100px 100px", borderBottom: "0.5px solid var(--border)" }}>
-                <span className="text-sm font-semibold" style={{ color: "var(--dark)" }}>{FUNCTION_LABELS[fn] ?? fn}</span>
-                <span className="text-sm" style={{ color: "var(--muted)" }}>{data.shifts} diensten</span>
-                <span className="text-sm" style={{ color: "var(--muted)" }}>{data.hours.toFixed(0)} uur</span>
-                <span className="text-sm font-semibold text-right" style={{ color: "var(--teal)" }}>€{data.spend.toFixed(0)}</span>
-              </div>
-            ))}
           </div>
-        )}
 
-        {allApps.length === 0 && (
-          <div className="mt-8 rounded-2xl p-12 text-center bg-white" style={{ border: "0.5px solid var(--border)" }}>
-            <div className="text-3xl mb-3">📊</div>
-            <p className="text-sm font-semibold mb-1" style={{ color: "var(--dark)" }}>Nog geen statistieken</p>
-            <p className="text-xs" style={{ color: "var(--muted)" }}>Statistieken worden beschikbaar zodra eerste diensten zijn goedgekeurd.</p>
+          {/* Top workers */}
+          <div className="rounded-2xl bg-white p-6" style={{ border: "0.5px solid var(--border)" }}>
+            <div className="text-sm font-semibold mb-4" style={{ color: "var(--dark)" }}>Top professionals</div>
+            {topWorkers.length === 0 ? (
+              <p className="text-sm" style={{ color: "var(--muted)" }}>Nog geen data.</p>
+            ) : (
+              <div className="space-y-2.5">
+                {topWorkers.map((app, i) => (
+                  <div key={app.id} className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                      style={{ background: i === 0 ? "#F59E0B" : "var(--teal)" }}>
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 text-sm font-medium truncate" style={{ color: "var(--dark)" }}>
+                      {app.user.name ?? "Onbekend"}
+                    </div>
+                    <div className="text-xs font-semibold" style={{ color: "var(--teal)" }}>
+                      {Number(app.hoursWorked ?? 0).toFixed(0)} uur
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </main>
     </div>
   );

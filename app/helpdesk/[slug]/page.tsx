@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Nav } from "@/components/Nav";
-import { HELPDESK_ARTICLES } from "@/app/helpdesk/page";
+import { HELPDESK_ARTICLES } from "@/lib/helpdesk-articles";
 
 // ─── Article content ──────────────────────────────────────────────────────────
 

@@ -10,6 +10,12 @@ const dmSans   = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", displ
 export const metadata: Metadata = {
   title: "CaredIn — Zorgprofessionals vinden & boeken",
   description: "CaredIn verbindt zorgprofessionals met zorginstellingen. Vind flexdiensten en vaste vacatures in zorg en welzijn.",
+  themeColor: "#1A7A6A",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Caredin",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

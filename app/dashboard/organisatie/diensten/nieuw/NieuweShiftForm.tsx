@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const WEEK_DAYS = [
@@ -42,6 +42,23 @@ const FUNCTIONS = [
   { value: "OVERIG",                label: "Overig" },
 ];
 
+interface ShiftTemplate {
+  id: string;
+  name: string;
+  title: string;
+  description: string | null;
+  sector: string;
+  function: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  hourlyRate: number | string;
+  breakMinutes: number;
+  requiresBig: boolean;
+  requiresSkj: boolean;
+  requiresKvk: boolean;
+}
+
 interface Props {
   defaultCity: string;
   defaultAddress: string;
@@ -52,6 +69,13 @@ export default function NieuweShiftForm({ defaultCity, defaultAddress, defaultPo
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Template state
+  const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateSaved, setTemplateSaved] = useState(false);
+  const templateMenuRef = useRef<HTMLDivElement>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -77,6 +101,76 @@ export default function NieuweShiftForm({ defaultCity, defaultAddress, defaultPo
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurDays, setRecurDays] = useState<number[]>([]);
   const [recurUntil, setRecurUntil] = useState("");
+
+  // Fetch templates on mount
+  useEffect(() => {
+    fetch("/api/shift-templates")
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setTemplates(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  // Close template menu on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (templateMenuRef.current && !templateMenuRef.current.contains(e.target as Node)) {
+        setShowTemplateMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  function applyTemplate(t: ShiftTemplate) {
+    setTitle(t.title);
+    setDescription(t.description ?? "");
+    setSector(t.sector);
+    setFn(t.function);
+    setAddress(t.address);
+    setCity(t.city);
+    setPostalCode(t.postalCode);
+    setHourlyRate(String(t.hourlyRate));
+    setBreakMinutes(String(t.breakMinutes));
+    setRequiresBig(t.requiresBig);
+    setRequiresSkj(t.requiresSkj);
+    setShowTemplateMenu(false);
+  }
+
+  async function saveAsTemplate() {
+    const name = window.prompt("Naam van de template:");
+    if (!name) return;
+    setSavingTemplate(true);
+    try {
+      await fetch("/api/shift-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          title,
+          description,
+          sector,
+          function: fn,
+          address,
+          city,
+          postalCode,
+          hourlyRate: parseFloat(hourlyRate) || 0,
+          breakMinutes: parseInt(breakMinutes || "30"),
+          requiresBig,
+          requiresSkj,
+          requiresKvk: false,
+        }),
+      });
+      setTemplateSaved(true);
+      // Refresh templates list
+      fetch("/api/shift-templates")
+        .then(r => r.ok ? r.json() : [])
+        .then(data => setTemplates(Array.isArray(data) ? data : []))
+        .catch(() => {});
+      setTimeout(() => setTemplateSaved(false), 2500);
+    } finally {
+      setSavingTemplate(false);
+    }
+  }
 
   function toggleRecurDay(day: number) {
     setRecurDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
@@ -167,6 +261,38 @@ export default function NieuweShiftForm({ defaultCity, defaultAddress, defaultPo
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+
+      {/* Template loader */}
+      {templates.length > 0 && (
+        <div className="flex justify-end" ref={templateMenuRef} style={{ position: "relative" }}>
+          <button
+            type="button"
+            onClick={() => setShowTemplateMenu(o => !o)}
+            className="px-4 py-2 rounded-[40px] text-sm font-semibold"
+            style={{ background: "var(--teal-light)", color: "var(--teal)", border: "1px solid var(--teal)", cursor: "pointer", fontFamily: "inherit" }}
+          >
+            📋 Laden uit template
+          </button>
+          {showTemplateMenu && (
+            <div
+              className="absolute top-full mt-1 right-0 bg-white rounded-2xl shadow-lg z-50"
+              style={{ border: "0.5px solid var(--border)", minWidth: 220 }}
+            >
+              {templates.map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => applyTemplate(t)}
+                  className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-50 first:rounded-t-2xl last:rounded-b-2xl"
+                  style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: "var(--dark)" }}
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Basisgegevens */}
       <Section title="Basisgegevens">
@@ -342,11 +468,22 @@ export default function NieuweShiftForm({ defaultCity, defaultAddress, defaultPo
           style={{ color: "var(--muted)", fontFamily: "inherit" }}>
           Annuleren
         </button>
-        <button type="submit" disabled={loading}
-          className="px-8 py-3 rounded-[40px] text-sm font-semibold text-white disabled:opacity-60 cursor-pointer"
-          style={{ background: "var(--teal)", fontFamily: "inherit", border: "none" }}>
-          {loading ? "Plaatsen…" : "Dienst plaatsen →"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={saveAsTemplate}
+            disabled={savingTemplate}
+            className="px-5 py-3 rounded-[40px] text-sm font-semibold cursor-pointer"
+            style={{ background: "var(--teal-light)", color: "var(--teal)", border: "1px solid var(--teal)", fontFamily: "inherit" }}
+          >
+            {templateSaved ? "✓ Opgeslagen" : savingTemplate ? "Opslaan…" : "💾 Opslaan als template"}
+          </button>
+          <button type="submit" disabled={loading}
+            className="px-8 py-3 rounded-[40px] text-sm font-semibold text-white disabled:opacity-60 cursor-pointer"
+            style={{ background: "var(--teal)", fontFamily: "inherit", border: "none" }}>
+            {loading ? "Plaatsen…" : "Dienst plaatsen →"}
+          </button>
+        </div>
       </div>
     </form>
   );

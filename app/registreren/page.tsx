@@ -275,6 +275,8 @@ function BedrijfForm() {
 // ─── PROFESSIONAL FORM ────────────────────────────────────────
 function ProfessionalForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref") ?? "";
   const [firstName, setFirstName] = useState("");
   const [lastName,  setLastName]  = useState("");
   const [email,    setEmail]    = useState("");
@@ -296,7 +298,7 @@ function ProfessionalForm() {
     const res = await fetch("/api/auth/registreren", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, rol: "freeflexer" }),
+      body: JSON.stringify({ name, email, password, rol: "freeflexer", ...(refCode ? { referralCode: refCode } : {}) }),
     });
     const data = await res.json();
     if (!res.ok) { setError(data.error ?? "Er ging iets mis."); setLoading(false); return; }

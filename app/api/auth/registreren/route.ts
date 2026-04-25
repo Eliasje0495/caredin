@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Ongeldig verzoek." }, { status: 400 });
   }
-  const { name, email, password, rol, companyName } = body;
+  const { name, email, password, rol, companyName, referralCode } = body;
 
   if (!name || !email || !password || !rol) {
     return NextResponse.json({ error: "Alle velden zijn verplicht." }, { status: 400 });
@@ -40,6 +40,14 @@ export async function POST(req: NextRequest) {
       }),
     },
   });
+
+  // After user creation: handle referral
+  if (referralCode) {
+    const referrer = await prisma.user.findUnique({ where: { referralCode }, select: { id: true } });
+    if (referrer) {
+      await prisma.user.update({ where: { id: user.id }, data: { referredById: referrer.id } });
+    }
+  }
 
   return NextResponse.json({ id: user.id });
 }

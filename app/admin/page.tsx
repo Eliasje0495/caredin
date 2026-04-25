@@ -47,6 +47,9 @@ export default async function AdminDashboardPage() {
     recentUsers,
     pendingCheckouts,
     totalRevenue,
+    recentAppsCount,
+    recentShiftsCount,
+    recentUsersCount,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.workerProfile.count(),
@@ -72,6 +75,12 @@ export default async function AdminDashboardPage() {
       where: { status: "APPROVED" },
       _sum: { platformFee: true },
     }),
+    // 10th: applications last 7 days
+    prisma.shiftApplication.count({ where: { appliedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+    // 11th: shifts created last 7 days
+    prisma.shift.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+    // 12th: new users last 7 days
+    prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
   ]);
 
   const platformRevenue = Number(totalRevenue._sum.platformFee ?? 0);
@@ -150,6 +159,28 @@ export default async function AdminDashboardPage() {
             <div style={{ fontSize: 12, color: "#5A7570", marginTop: 2 }}>{s.sub}</div>
           </div>
         ))}
+      </div>
+
+      {/* This week trend */}
+      <div style={{ marginBottom: 36 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#5A7570", marginBottom: 12 }}>
+          Afgelopen 7 dagen
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          {[
+            { label: "Nieuwe aanmeldingen", value: recentAppsCount,   icon: "📝" },
+            { label: "Nieuwe diensten",     value: recentShiftsCount, icon: "📅" },
+            { label: "Nieuwe gebruikers",   value: recentUsersCount,  icon: "👤" },
+          ].map(s => (
+            <div key={s.label} style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: "0.5px solid rgba(26,122,106,0.15)", display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 24 }}>{s.icon}</span>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "var(--font-fraunces)", color: "#1A7A6A", lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 12, color: "#5A7570", marginTop: 2 }}>{s.label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 24 }}>

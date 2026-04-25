@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Nav } from "@/components/Nav";
-import { BLOG_ARTICLES } from "@/app/blog/page";
+import { BLOG_ARTICLES } from "@/lib/blog-posts";
 
 // ─── Article body content ────────────────────────────────────────────────────
 
