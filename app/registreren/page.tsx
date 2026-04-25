@@ -341,26 +341,35 @@ function ProfessionalForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4 flex-1">
           {/* Name row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[12px] font-semibold mb-1.5 uppercase tracking-[0.5px]"
-                style={{ color: "var(--muted)" }}>Voornaam</label>
-              <input type="text" required value={firstName} onChange={e => setFirstName(e.target.value)}
-                placeholder="Fatima"
-                className="w-full px-4 py-3.5 rounded-xl text-sm outline-none bg-white transition-all"
-                style={{ border: "1.5px solid var(--border)", fontFamily: "inherit", color: "var(--text)" }}
-                onFocus={e => e.currentTarget.style.borderColor = "var(--teal)"}
-                onBlur={e => e.currentTarget.style.borderColor = "var(--border)"} />
+          <div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[12px] font-semibold mb-1.5 uppercase tracking-[0.5px]"
+                  style={{ color: "var(--muted)" }}>Voornaam</label>
+                <input type="text" required value={firstName} onChange={e => setFirstName(e.target.value)}
+                  placeholder="Fatima"
+                  className="w-full px-4 py-3.5 rounded-xl text-sm outline-none bg-white transition-all"
+                  style={{ border: "1.5px solid var(--border)", fontFamily: "inherit", color: "var(--text)" }}
+                  onFocus={e => e.currentTarget.style.borderColor = "var(--teal)"}
+                  onBlur={e => e.currentTarget.style.borderColor = "var(--border)"} />
+              </div>
+              <div>
+                <label className="block text-[12px] font-semibold mb-1.5 uppercase tracking-[0.5px]"
+                  style={{ color: "var(--muted)" }}>Achternaam</label>
+                <input type="text" required value={lastName} onChange={e => setLastName(e.target.value)}
+                  placeholder="El-Amin"
+                  className="w-full px-4 py-3.5 rounded-xl text-sm outline-none bg-white transition-all"
+                  style={{ border: "1.5px solid var(--border)", fontFamily: "inherit", color: "var(--text)" }}
+                  onFocus={e => e.currentTarget.style.borderColor = "var(--teal)"}
+                  onBlur={e => e.currentTarget.style.borderColor = "var(--border)"} />
+              </div>
             </div>
-            <div>
-              <label className="block text-[12px] font-semibold mb-1.5 uppercase tracking-[0.5px]"
-                style={{ color: "var(--muted)" }}>Achternaam</label>
-              <input type="text" required value={lastName} onChange={e => setLastName(e.target.value)}
-                placeholder="El-Amin"
-                className="w-full px-4 py-3.5 rounded-xl text-sm outline-none bg-white transition-all"
-                style={{ border: "1.5px solid var(--border)", fontFamily: "inherit", color: "var(--text)" }}
-                onFocus={e => e.currentTarget.style.borderColor = "var(--teal)"}
-                onBlur={e => e.currentTarget.style.borderColor = "var(--border)"} />
+            <div className="flex items-start gap-2 mt-2 px-3 py-2 rounded-lg"
+              style={{ background: "var(--teal-light)", border: "1px solid rgba(26,122,106,0.15)" }}>
+              <span className="text-[13px] flex-shrink-0 mt-px">🪪</span>
+              <p className="text-[11px] leading-[1.6]" style={{ color: "var(--teal)" }}>
+                Vul je naam in <strong>exact zoals op je ID-bewijs</strong> — dit is vereist voor verificatie van je BIG-, SKJ- of andere beroepsregistraties.
+              </p>
             </div>
           </div>
 
