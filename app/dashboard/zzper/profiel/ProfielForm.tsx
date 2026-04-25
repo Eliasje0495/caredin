@@ -66,7 +66,13 @@ export default function ProfielForm({ initialData }: { initialData: InitialData 
       const res = await fetch(`/api/verify/skj?nummer=${cleaned}`).catch(() => null);
       if (!res) { setSkjLookup({ loading: false, error: "Verbinding mislukt" }); return; }
       const d = await res.json();
-      setSkjLookup({ loading: false, valid: d.geregistreerd, naam: d.naam, error: d.geregistreerd === false ? "SKJ-nummer niet actief of niet gevonden" : undefined });
+      const geldig = d.gevonden ? d.geregistreerd : false;
+      setSkjLookup({
+        loading: false,
+        valid: geldig,
+        naam: d.naam,
+        error: !d.gevonden ? "SKJ-nummer niet gevonden in het register" : (!d.geregistreerd ? "SKJ-registratie is niet actief" : undefined),
+      });
     }, 600);
   }
 
