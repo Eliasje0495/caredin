@@ -1,7 +1,11 @@
-// lib/big.ts — BIG-register verificatie (bigregister.nl)
-// Documentatie: https://www.bigregister.nl/zoekbig/static/resources/ZoekBIGRestfulWebserviceClient.pdf
+// lib/big.ts — BIG-register verificatie via SOAP API (api.bigregister.nl)
+// Endpoint gewijzigd april 2023: https://www.bigregister.nl/actueel/nieuws/2023/04/26/wijziging-endpoint-webservice
+// WSDL: https://api.bigregister.nl/zksrv/soap/4?wsdl
+// Operatie: ListHcpApprox4
 
-const BIG_API_BASE = "https://zoekbigregistraties.zorgcsp.nl/api/v1";
+const BIG_SOAP_URL    = "https://api.bigregister.nl/zksrv/soap/4";
+const BIG_SOAP_ACTION = "http://services.cibg.nl/ExternalUser/ListHcpApprox4";
+const BIG_NS          = "http://services.cibg.nl/ExternalUser";
 
 export interface BigResult {
   valid:       boolean;
@@ -12,6 +16,21 @@ export interface BigResult {
   error?:      string;
 }
 
+// Professionele groep codes → leesbare naam
+const PROF_GROUP: Record<string, string> = {
+  "01": "Arts",
+  "02": "Tandarts",
+  "03": "Apotheker",
+  "04": "Gezondheidspsycholoog",
+  "05": "Psychotherapeut",
+  "06": "Fysiotherapeut",
+  "07": "Verloskundige",
+  "08": "Verpleegkundige",
+  "09": "Physician assistant",
+  "10": "Orthopedagoog-generalist",
+  "25": "Verpleegkundig specialist",
+};
+
 export async function verifyBigNumber(bigNumber: string): Promise<BigResult> {
   const cleaned = bigNumber.replace(/\s/g, "").trim();
 
@@ -19,44 +38,81 @@ export async function verifyBigNumber(bigNumber: string): Promise<BigResult> {
     return { valid: false, error: "BIG-nummer moet 11 cijfers bevatten" };
   }
 
+  const soapBody = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tns="${BIG_NS}">
+  <soap:Body>
+    <tns:listHcpApproxRequest>
+      <tns:WebSite>None</tns:WebSite>
+      <tns:RegistrationNumber>${cleaned}</tns:RegistrationNumber>
+    </tns:listHcpApproxRequest>
+  </soap:Body>
+</soap:Envelope>`;
+
   try {
-    const res = await fetch(`${BIG_API_BASE}/registrations/${cleaned}`, {
+    const res = await fetch(BIG_SOAP_URL, {
+      method:  "POST",
       headers: {
-        "Accept": "application/json",
+        "Content-Type": "text/xml; charset=utf-8",
+        "SOAPAction":   BIG_SOAP_ACTION,
       },
-      next: { revalidate: 3600 }, // cache 1 uur
+      body:   soapBody,
+      signal: AbortSignal.timeout(10_000),
     });
 
-    if (res.status === 404) {
-      return { valid: false, error: "BIG-nummer niet gevonden in het register" };
-    }
-
     if (!res.ok) {
-      throw new Error(`BIG API fout: ${res.status}`);
+      throw new Error(`BIG SOAP fout: HTTP ${res.status}`);
     }
 
-    const data = await res.json();
+    const xml = await res.text();
 
-    // BIG API geeft een array van registraties terug
-    const registrations: any[] = data?.registrations ?? [data];
-    const active = registrations.find((r: any) =>
-      r.status?.toLowerCase().includes("ingeschreven") ||
-      r.statusDescription?.toLowerCase().includes("registered")
-    );
+    // Parse naam
+    const mailingName = xml.match(/<(?:[^:]+:)?MailingName>([^<]*)<\/(?:[^:]+:)?MailingName>/)?.[1]?.trim() ?? "";
+    const initial     = xml.match(/<(?:[^:]+:)?Initial>([^<]*)<\/(?:[^:]+:)?Initial>/)?.[1]?.trim() ?? "";
+    const prefix      = xml.match(/<(?:[^:]+:)?Prefix>([^<]*)<\/(?:[^:]+:)?Prefix>/)?.[1]?.trim() ?? "";
+    const name        = [initial, prefix, mailingName].filter(Boolean).join(" ") || undefined;
 
-    if (!active && registrations.length === 0) {
-      return { valid: false, error: "Geen actieve BIG-registratie gevonden" };
+    // Registraties uitlezen
+    const regMatches = [...xml.matchAll(/<(?:[^:]+:)?ArticleRegistrationExtApp[^>]*>([\s\S]*?)<\/(?:[^:]+:)?ArticleRegistrationExtApp>/g)];
+
+    if (regMatches.length === 0) {
+      return { valid: false, name, error: "BIG-nummer niet gevonden in het register" };
     }
 
-    const reg = active ?? registrations[0];
+    // Zoek actieve registratie (endDate in de toekomst)
+    const now = new Date();
+    let activeReg: { profCode: string; endDate: string } | null = null;
+
+    for (const match of regMatches) {
+      const block    = match[1];
+      const endStr   = block.match(/<(?:[^:]+:)?ArticleRegistrationEndDate>([^<]*)<\/(?:[^:]+:)?ArticleRegistrationEndDate>/)?.[1] ?? "";
+      const profCode = block.match(/<(?:[^:]+:)?ProfessionalGroupCode>([^<]*)<\/(?:[^:]+:)?ProfessionalGroupCode>/)?.[1]?.trim() ?? "";
+      const endDate  = new Date(endStr);
+      if (!endStr || endDate > now) {
+        activeReg = { profCode, endDate: endStr ? endDate.toISOString().split("T")[0] : "" };
+        break;
+      }
+    }
+
+    if (!activeReg) {
+      const lastBlock  = regMatches[regMatches.length - 1][1];
+      const profCode   = lastBlock.match(/<(?:[^:]+:)?ProfessionalGroupCode>([^<]*)<\/(?:[^:]+:)?ProfessionalGroupCode>/)?.[1]?.trim() ?? "";
+      const endStr     = lastBlock.match(/<(?:[^:]+:)?ArticleRegistrationEndDate>([^<]*)<\/(?:[^:]+:)?ArticleRegistrationEndDate>/)?.[1] ?? "";
+      return {
+        valid:      false,
+        name,
+        profession: PROF_GROUP[profCode] ?? profCode,
+        status:     "Doorgehaald of verlopen",
+        registrationEnd: endStr ? new Date(endStr).toISOString().split("T")[0] : undefined,
+        error:      "BIG-registratie is niet meer actief",
+      };
+    }
 
     return {
-      valid:       !!active,
-      name:        [reg.firstName, reg.lastName].filter(Boolean).join(" ") || reg.fullName,
-      profession:  reg.professionDescription ?? reg.profession,
-      status:      reg.statusDescription ?? reg.status,
-      registrationEnd: reg.registrationEnd,
-      error:       active ? undefined : "BIG-registratie is niet actief (doorgehaald of verlopen)",
+      valid:      true,
+      name,
+      profession: PROF_GROUP[activeReg.profCode] ?? activeReg.profCode,
+      status:     "Ingeschreven",
+      registrationEnd: activeReg.endDate || undefined,
     };
   } catch (err) {
     console.error("[BIG verify]", err);
