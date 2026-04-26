@@ -1,8 +1,11 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import nextDynamic from "next/dynamic";
 import { Nav } from "@/components/Nav";
 import { prisma } from "@/lib/prisma";
+
+const ShiftMap = nextDynamic(() => import("@/components/ShiftMap"), { ssr: false });
 
 const FUNCTION_LABELS: Record<string, string> = {
   VERPLEEGKUNDIGE: "Verpleegkundige",
@@ -84,7 +87,7 @@ function removeParam(
 export default async function VacaturesPage({
   searchParams,
 }: {
-  searchParams: { sector?: string; functie?: string; q?: string; stad?: string; sortBy?: string; registratie?: string };
+  searchParams: { sector?: string; functie?: string; q?: string; stad?: string; sortBy?: string; registratie?: string; view?: string };
 }) {
   const where: any = { status: "OPEN" };
   if (searchParams.sector) where.sector = searchParams.sector;
@@ -108,6 +111,27 @@ export default async function VacaturesPage({
   const activeFunctie = searchParams.functie ?? null;
   const activeStad = searchParams.stad ?? null;
   const activeRegistratie = searchParams.registratie ?? null;
+  const activeView = searchParams.view === "kaart" ? "kaart" : "lijst";
+
+  // Bouw ShiftPin data voor kaartweergave
+  const shiftPins = shifts.map((s) => {
+    const startDate = new Date(s.startTime);
+    const endDate   = new Date(s.endTime);
+    return {
+      id:           s.id,
+      lat:          s.lat ? Number(s.lat) : 0,
+      lng:          s.lng ? Number(s.lng) : 0,
+      title:        s.title,
+      city:         s.city,
+      function:     s.function,
+      sector:       s.sector,
+      hourlyRate:   Number(s.hourlyRate).toFixed(2),
+      dateLabel:    startDate.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" }),
+      timeLabel:    `${startDate.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })} – ${endDate.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}`,
+      employerName: s.employer.companyName,
+      isUrgent:     s.isUrgent,
+    };
+  });
 
   const REGISTRATIE_LABELS: Record<string, string> = {
     big: "BIG vereist",
@@ -458,15 +482,54 @@ export default async function VacaturesPage({
                       {shifts.length === 0 ? "Geen resultaten" : `${SORT_OPTIONS.find((o) => o.value === (searchParams.sortBy ?? ""))?.label ?? "Nieuwste eerst"}`}
                     </p>
                   </div>
-                  {(activeSector || activeFunctie || activeStad || activeRegistratie || searchParams.q) && (
-                    <Link
-                      href="/vacatures"
-                      className="text-xs font-medium no-underline px-4 py-2 rounded-[40px]"
-                      style={{ border: "0.5px solid var(--border)", color: "var(--muted)" }}
-                    >
-                      ✕ Filters wissen
-                    </Link>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {/* Lijst / Kaart toggle */}
+                    {(() => {
+                      const base = new URLSearchParams();
+                      if (searchParams.sector)     base.set("sector",     searchParams.sector);
+                      if (searchParams.functie)    base.set("functie",    searchParams.functie);
+                      if (searchParams.q)          base.set("q",          searchParams.q);
+                      if (searchParams.stad)       base.set("stad",       searchParams.stad);
+                      if (searchParams.sortBy)     base.set("sortBy",     searchParams.sortBy);
+                      if (searchParams.registratie)base.set("registratie",searchParams.registratie);
+                      const listParams  = new URLSearchParams(base); listParams.set("view", "lijst");
+                      const kaartParams = new URLSearchParams(base); kaartParams.set("view", "kaart");
+                      return (
+                        <div className="flex rounded-xl overflow-hidden" style={{ border: "0.5px solid var(--border)" }}>
+                          <Link
+                            href={`/vacatures?${listParams}`}
+                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold no-underline transition-colors"
+                            style={{
+                              background: activeView === "lijst" ? "var(--teal)" : "white",
+                              color:      activeView === "lijst" ? "white" : "var(--muted)",
+                            }}
+                          >
+                            ☰ Lijst
+                          </Link>
+                          <Link
+                            href={`/vacatures?${kaartParams}`}
+                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold no-underline transition-colors"
+                            style={{
+                              background: activeView === "kaart" ? "var(--teal)" : "white",
+                              color:      activeView === "kaart" ? "white" : "var(--muted)",
+                              borderLeft: "0.5px solid var(--border)",
+                            }}
+                          >
+                            🗺️ Kaart
+                          </Link>
+                        </div>
+                      );
+                    })()}
+                    {(activeSector || activeFunctie || activeStad || activeRegistratie || searchParams.q) && (
+                      <Link
+                        href="/vacatures"
+                        className="text-xs font-medium no-underline px-4 py-2 rounded-[40px]"
+                        style={{ border: "0.5px solid var(--border)", color: "var(--muted)" }}
+                      >
+                        ✕ Filters wissen
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -488,6 +551,8 @@ export default async function VacaturesPage({
                     Alle diensten bekijken
                   </Link>
                 </div>
+              ) : activeView === "kaart" ? (
+                <ShiftMap shifts={shiftPins} />
               ) : (
                 <div className="space-y-3">
                   {shifts.map((shift) => {
